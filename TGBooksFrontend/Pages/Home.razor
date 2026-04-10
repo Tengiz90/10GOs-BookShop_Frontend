@@ -1,0 +1,106 @@
+﻿@page "/"
+@using TGBooksFrontend.Models
+@inject HttpClient Http
+
+<PageTitle>Home</PageTitle>
+
+<div class="search-bar-container">
+    <input type="text"
+           class="search-input"
+           placeholder="Book title"
+           @bind="searchQuery"
+           @bind:event="oninput" />
+</div>
+
+@if (books == null)
+{
+    <div class="loading-container">
+        <p>Loading books from Azure...</p>
+    </div>
+}
+else if (!FilteredBooks.Any())
+{
+    <div class="loading-container">
+        <p>No books found.</p>
+    </div>
+}
+else
+{
+    <div class="book-grid">
+        @foreach (var book in FilteredBooks)
+        {
+            <div class="book-card">
+                <img src="@book.ImageURL" class="book-image" />
+                <div class="book-info">
+                    @* Wrap text so it grows and pushes the button to the bottom *@
+                    <div class="book-text-content">
+                        <h4 class="book-title">@book.Title</h4>
+                        <p class="author-name">@string.Join(", ", book.Authors.Select(a => a.Name))</p>
+                        <p class="book-detail">Language: @(book.Language == 0 ? "English" : "Georgian")</p>
+                        <p class="book-detail">Available: @book.Quantity</p>
+                    </div>
+
+                    <button class="add-to-cart-btn">Add to Cart</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="pagination-footer">
+        <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
+        <span>Page @currentPage</span>
+        <button class="page-btn" @onclick="NextPage">Next</button>
+    </div>
+}
+
+@code {
+    private List<Book>? books;
+    private string searchQuery = "";
+    private int currentPage = 1;
+    private const int pageSize = 20;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var url = $"api/books/page?pageNumber={currentPage}&pageSize={pageSize}";
+            var response = await Http.GetFromJsonAsync<PagedResponse>(url);
+
+            if (response != null)
+            {
+                books = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching data: {ex.Message}");
+        }
+    }
+
+    private async Task NextPage()
+    {
+        currentPage++;
+        books = null;
+        await LoadData();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            books = null;
+            await LoadData();
+        }
+    }
+
+    private IEnumerable<Book> FilteredBooks =>
+        string.IsNullOrWhiteSpace(searchQuery)
+            ? books ?? new()
+            : (books ?? new()).Where(b => b.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+}
