@@ -13,7 +13,7 @@ namespace TGBooksFrontend
 
             builder.Services.AddScoped(sp => new HttpClient
             {
-                BaseAddress = new Uri("https://10gosbooksapp-cge6dhaxgnepdahd.westeurope-01.azurewebsites.net/")
+                BaseAddress = new Uri("https://tg-books-backend-gyfhgbaye3evbpek.polandcentral-01.azurewebsites.net/api/")
             });
 
             await builder.Build().RunAsync();

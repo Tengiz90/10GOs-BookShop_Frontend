@@ -7,7 +7,7 @@
 <div class="search-bar-container">
     <input type="text"
            class="search-input"
-           placeholder="Book title"
+           placeholder="Search by book title..."
            @bind="searchQuery"
            @bind:event="oninput" />
 </div>
@@ -15,13 +15,13 @@
 @if (books == null)
 {
     <div class="loading-container">
-        <p>Loading books from Azure...</p>
+        <p>Loading books...</p>
     </div>
 }
 else if (!FilteredBooks.Any())
 {
     <div class="loading-container">
-        <p>No books found.</p>
+        <p>No books found matching "@searchQuery".</p>
     </div>
 }
 else
@@ -30,17 +30,45 @@ else
         @foreach (var book in FilteredBooks)
         {
             <div class="book-card">
-                <img src="@book.ImageURL" class="book-image" />
+                @* The image-container acts as the 'anchor' for the sale badge *@
+                <div class="image-container">
+                    <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
+
+                    @if (book.OnSale && book.OffPercentage > 0)
+                    {
+                        <div class="sale-badge">@book.OffPercentage% OFF</div>
+                    }
+                </div>
+
                 <div class="book-info">
-                    @* Wrap text so it grows and pushes the button to the bottom *@
                     <div class="book-text-content">
                         <h4 class="book-title">@book.Title</h4>
-                        <p class="author-name">@string.Join(", ", book.Authors.Select(a => a.Name))</p>
+
+                        <p class="author-name">
+                            @for (int i = 0; i < book.Authors.Count; i++)
+                            {
+                                var author = book.Authors[i];
+                                <a href="/author/@author.Id" class="author-link">@author.Name</a>
+
+                                @if (i < book.Authors.Count - 1)
+                                {
+                                    <span>, </span>
+                                }
+                            }
+                        </p>
+
                         <p class="book-detail">Language: @(book.Language == 0 ? "English" : "Georgian")</p>
                         <p class="book-detail">Available: @book.Quantity</p>
                     </div>
 
-                    <button class="add-to-cart-btn">Add to Cart</button>
+                    @if (book.AlreadyInCart)
+                    {
+                        <button class="add-to-cart-btn secondary" disabled>In Cart</button>
+                    }
+                    else
+                    {
+                        <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
+                    }
                 </div>
             </div>
         }
@@ -68,7 +96,8 @@ else
     {
         try
         {
-            var url = $"api/books/page?pageNumber={currentPage}&pageSize={pageSize}";
+            books = null;
+            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}";
             var response = await Http.GetFromJsonAsync<PagedResponse>(url);
 
             if (response != null)
@@ -82,10 +111,23 @@ else
         }
     }
 
+    private async Task AddToCart(Book book)
+    {
+        try
+        {
+            book.AlreadyInCart = true;
+            Console.WriteLine($"Added {book.Title} to cart.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding to cart: {ex.Message}");
+        }
+    }
+
     private async Task NextPage()
     {
         currentPage++;
-        books = null;
         await LoadData();
     }
 
@@ -94,7 +136,6 @@ else
         if (currentPage > 1)
         {
             currentPage--;
-            books = null;
             await LoadData();
         }
     }
