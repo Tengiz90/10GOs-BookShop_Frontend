@@ -8,17 +8,18 @@
     <input type="text"
            class="search-input"
            placeholder="Search by book title..."
-           @bind="searchQuery"
-           @bind:event="oninput" />
+           value="@searchQuery"
+           @oninput="OnSearchInput" />
 </div>
 
 @if (books == null)
 {
     <div class="loading-container">
+        <div class="spinner"></div>
         <p>Loading books...</p>
     </div>
 }
-else if (!FilteredBooks.Any())
+else if (!books.Any())
 {
     <div class="loading-container">
         <p>No books found matching "@searchQuery".</p>
@@ -27,10 +28,9 @@ else if (!FilteredBooks.Any())
 else
 {
     <div class="book-grid">
-        @foreach (var book in FilteredBooks)
+        @foreach (var book in books)
         {
-            <div class="book-card">
-                @* The image-container acts as the 'anchor' for the sale badge *@
+            <div class="book-card" @key="book.Id">
                 <div class="image-container">
                     <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
@@ -45,14 +45,17 @@ else
                         <h4 class="book-title">@book.Title</h4>
 
                         <p class="author-name">
-                            @for (int i = 0; i < book.Authors.Count; i++)
+                            @if (book.Authors != null)
                             {
-                                var author = book.Authors[i];
-                                <a href="/author/@author.Id" class="author-link">@author.Name</a>
-
-                                @if (i < book.Authors.Count - 1)
+                                @for (int i = 0; i < book.Authors.Count; i++)
                                 {
-                                    <span>, </span>
+                                    var author = book.Authors.ElementAt(i);
+                                    <a href="/author/@author.Id" class="author-link">@author.Name</a>
+
+                                    @if (i < book.Authors.Count - 1)
+                                    {
+                                        <span>, </span>
+                                    }
                                 }
                             }
                         </p>
@@ -74,10 +77,11 @@ else
         }
     </div>
 
+    @* Pagination controls using dynamic stream calculations *@
     <div class="pagination-footer">
         <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
         <span>Page @currentPage</span>
-        <button class="page-btn" @onclick="NextPage">Next</button>
+        <button class="page-btn" disabled="@(!hasNextPage)" @onclick="NextPage">Next</button>
     </div>
 }
 
@@ -86,6 +90,9 @@ else
     private string searchQuery = "";
     private int currentPage = 1;
     private const int pageSize = 20;
+    private bool hasNextPage = false;
+
+    private System.Timers.Timer? debounceTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -96,19 +103,63 @@ else
     {
         try
         {
-            books = null;
-            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}";
-            var response = await Http.GetFromJsonAsync<PagedResponse>(url);
+            // 1. Matches your API query string parameter '[FromQuery] string? title'
+            var encodedSearch = Uri.EscapeDataString(searchQuery);
+            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&title={encodedSearch}";
 
-            if (response != null)
+            // 2. Deserializes directly into your exact backend ApiResponse template structure
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
+
+            if (response != null && response.WasSuccessful && response.Data != null)
             {
                 books = response.Data;
+
+                // 3. Dynamic evaluation: If we pull a full index, keep the navigation active
+                hasNextPage = books.Count == pageSize;
+            }
+            else
+            {
+                books = new List<Book>();
+                hasNextPage = false;
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error fetching data: {ex.Message}");
+            books = new List<Book>();
+            hasNextPage = false;
         }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        currentPage = 1; // Always return to page 1 on filter changes
+
+        // 1. Safely teardown old timer and unhook old references to prevent event multi-firing loops
+        if (debounceTimer != null)
+        {
+            debounceTimer.Stop();
+            debounceTimer.Elapsed -= OnTimerElapsed;
+            debounceTimer.Dispose();
+        }
+
+        // 2. Configure a completely fresh isolated timer instance
+        debounceTimer = new System.Timers.Timer(350); // 350ms is the sweet spot for typing pacing
+        debounceTimer.Elapsed += OnTimerElapsed;
+        debounceTimer.AutoReset = false; // Run once per key pause group
+        debounceTimer.Start();
+    }
+
+    private async void OnTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        // 3. Force background execution back safely onto the main UI thread loop
+        await InvokeAsync(async () =>
+        {
+            books = null; // Triggers loading spinner animation instantly while resolving array
+            await LoadData();
+            StateHasChanged(); // CRITICAL: Forces UI repaint for backspaces/additions
+        });
     }
 
     private async Task AddToCart(Book book)
@@ -117,7 +168,6 @@ else
         {
             book.AlreadyInCart = true;
             Console.WriteLine($"Added {book.Title} to cart.");
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -127,8 +177,12 @@ else
 
     private async Task NextPage()
     {
-        currentPage++;
-        await LoadData();
+        if (hasNextPage)
+        {
+            currentPage++;
+            books = null;
+            await LoadData();
+        }
     }
 
     private async Task PreviousPage()
@@ -136,12 +190,8 @@ else
         if (currentPage > 1)
         {
             currentPage--;
+            books = null;
             await LoadData();
         }
     }
-
-    private IEnumerable<Book> FilteredBooks =>
-        string.IsNullOrWhiteSpace(searchQuery)
-            ? books ?? new()
-            : (books ?? new()).Where(b => b.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
 }

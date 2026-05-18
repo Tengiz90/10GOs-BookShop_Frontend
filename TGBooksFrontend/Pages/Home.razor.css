@@ -57,7 +57,7 @@
     position: relative;
     width: 100%;
     height: 300px;
-    background-color: #ffffff; /* Or #f9f9f9 to see the image bounds */
+    background-color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -65,12 +65,10 @@
 }
 
 .book-image {
-    /* This is the magic line */
     max-width: 100%;
     max-height: 100%;
     width: auto;
     height: auto;
-    /* Ensures the verticalness is presumed without cropping */
     object-fit: contain;
     display: block;
 }
@@ -85,7 +83,7 @@
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: bold;
-    z-index: 20; /* High z-index to stay on top */
+    z-index: 20;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
@@ -169,4 +167,25 @@
     padding: 50px;
     font-size: 1.2rem;
     color: #666;
+}
+
+/* Spinner Styles */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #2e7d32; /* Match your primary theme accent green color */
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }

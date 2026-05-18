@@ -1,0 +1,72 @@
+﻿@page "/categories"
+@using TGBooksFrontend.Models
+@inject HttpClient Http
+
+<PageTitle>Categories</PageTitle>
+
+<div class="category-container">
+    <h3>Book Categories</h3>
+    <hr />
+
+    @if (categories == null)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading categories...</p>
+        </div>
+    }
+    else if (!categories.Any())
+    {
+        <div class="no-data-container">
+            <p>No categories found.</p>
+        </div>
+    }
+    else
+    {
+        <div class="category-grid">
+            @foreach (var category in categories)
+            {
+                @* Wrapped entire card structure in an anchor link *@
+                <a href="/books?categoryId=@category.Id" class="category-card" @key="category.Id">
+                    <div class="category-info">
+                        <h4 class="category-title">@category.Type</h4>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<TGBooksFrontend.Models.Category>? categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            var url = "categories/get-all";
+
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<TGBooksFrontend.Models.Category>>>(url);
+
+            if (response != null && response.WasSuccessful && response.Data != null)
+            {
+                categories = response.Data;
+            }
+            else
+            {
+                categories = new List<TGBooksFrontend.Models.Category>();
+                Console.WriteLine($"API Warning: {response?.Message ?? "Unknown error"}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching categories: {ex.Message}");
+            categories = new List<TGBooksFrontend.Models.Category>();
+        }
+    }
+}
