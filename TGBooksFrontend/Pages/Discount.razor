@@ -1,30 +1,20 @@
-﻿@page "/"
+﻿@page "/discounts"
 @using TGBooksFrontend.Models
 @inject HttpClient Http
-@inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
-
-<div class="search-bar-container">
-    <input type="text"
-           class="search-input"
-           placeholder="Search by book title..."
-           value="@searchQuery"
-           @oninput="OnSearchInput" />
-</div>
+<PageTitle>Promotions & Discounts</PageTitle>
 
 @if (books == null)
 {
     <div class="loading-container">
         <div class="spinner"></div>
-        <p>Loading books...</p>
+        <p>Loading discount deals...</p>
     </div>
 }
 else if (!books.Any())
 {
     <div class="loading-container">
-        <p>No books found matching "@searchQuery".</p>
+        <p>There are currently no active promotional book sales available.</p>
     </div>
 }
 else
@@ -79,7 +69,7 @@ else
         }
     </div>
 
-    @* Pagination controls using dynamic stream calculations *@
+    @* Reused Home Pagination Controls *@
     <div class="pagination-footer">
         <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
         <span>Page @currentPage</span>
@@ -89,12 +79,9 @@ else
 
 @code {
     private List<Book>? books;
-    private string searchQuery = "";
     private int currentPage = 1;
     private const int pageSize = 20;
     private bool hasNextPage = false;
-
-    private System.Timers.Timer? debounceTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,18 +107,14 @@ else
     {
         try
         {
-            // 1. Matches your API query string parameter '[FromQuery] string? title'
-            var encodedSearch = Uri.EscapeDataString(searchQuery);
-            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&title={encodedSearch}";
+            // Appends onSale=true parameter directly to target your [HttpGet("page")] query options
+            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&onSale=true";
 
-            // 2. Deserializes directly into your exact backend ApiResponse template structure
             var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
 
             if (response != null && response.WasSuccessful && response.Data != null)
             {
                 books = response.Data;
-
-                // 3. Dynamic evaluation: If we pull a full index, keep the navigation active
                 hasNextPage = books.Count == pageSize;
             }
             else
@@ -148,52 +131,10 @@ else
         }
     }
 
-    private void OnSearchInput(ChangeEventArgs e)
-    {
-        searchQuery = e.Value?.ToString() ?? "";
-        currentPage = 1; // Always return to page 1 on filter changes
-
-        // 1. Safely teardown old timer and unhook old references to prevent event multi-firing loops
-        if (debounceTimer != null)
-        {
-            debounceTimer.Stop();
-            debounceTimer.Elapsed -= OnTimerElapsed;
-            debounceTimer.Dispose();
-        }
-
-        // 2. Configure a completely fresh isolated timer instance
-        debounceTimer = new System.Timers.Timer(350); // 350ms is the sweet spot for typing pacing
-        debounceTimer.Elapsed += OnTimerElapsed;
-        debounceTimer.AutoReset = false; // Run once per key pause group
-        debounceTimer.Start();
-    }
-
-    private async void OnTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
-    {
-        // 3. Force background execution back safely onto the main UI thread loop
-        await InvokeAsync(async () =>
-        {
-            books = null; // Triggers loading spinner animation instantly while resolving array
-            await LoadData();
-            StateHasChanged(); // CRITICAL: Forces UI repaint for backspaces/additions
-        });
-    }
-
     private async Task AddToCart(Book book)
     {
         try
         {
-            // Verify security state via CustomAuthStateProvider reference checks
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (user.Identity == null || !user.Identity.IsAuthenticated)
-            {
-                // Force an immediate UI reroute to the sign-in portal if unauthorized
-                Navigation.NavigateTo("login");
-                return;
-            }
-
             book.AlreadyInCart = true;
             Console.WriteLine($"Added {book.Title} to cart.");
         }
@@ -208,7 +149,7 @@ else
         if (hasNextPage)
         {
             currentPage++;
-            books = null;
+            books = null; // Instantly show spinner
             await LoadData();
         }
     }
@@ -218,7 +159,7 @@ else
         if (currentPage > 1)
         {
             currentPage--;
-            books = null;
+            books = null; // Instantly show spinner
             await LoadData();
         }
     }

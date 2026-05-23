@@ -1,0 +1,92 @@
+﻿@page "/login"
+@using TGBooksFrontend.Models
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<div class="login-page-container">
+    <div class="login-card">
+        <h3>Welcome Back</h3>
+        <p class="subtitle">Log into your account</p>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-banner">@errorMessage</div>
+        }
+
+        <EditForm Model="signInModel" OnValidSubmit="HandleLogin">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="form-input" @bind-value="signInModel.Email" required />
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-input" @bind-value="signInModel.Password" required />
+            </div>
+
+            <button type="submit" class="submit-btn" disabled="@isSubmitting">
+                @(isSubmitting ? "Signing in..." : "Sign In")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private SignInUser signInModel = new SignInUser { client = Client.Web };
+    private string? errorMessage;
+    private bool isSubmitting = false;
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        try
+        {
+            var responseMessage = await Http.PostAsJsonAsync("users/sign-in", signInModel);
+
+            if (responseMessage.IsSuccessStatusCode)
+            {
+                var result = await responseMessage.Content.ReadFromJsonAsync<ApiResponse<GetUserByEmailAndPasswordResult>>();
+
+                if (result != null && result.WasSuccessful && result.Data != null)
+                {
+                    var session = new UserSession
+                    {
+                        Id = result.Data.Id,
+                        FirstName = result.Data.FirstName,
+                        LastName = result.Data.LastName,
+                        Email = result.Data.Email,
+                        JwtToken = result.Data.JwtToken,
+                        Role = result.Data.role.ToString()
+                    };
+
+                    // Called asynchronously now to safely process the storage IO thread pipeline
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(session);
+                    Navigation.NavigateTo("user-profile");
+                }
+                else
+                {
+                    errorMessage = result?.Message ?? "Invalid login credentials.";
+                }
+            }
+            else
+            {
+                errorMessage = "Server connection error. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class SignInUser { public string Email { get; set; } = ""; public string Password { get; set; } = ""; public Client client { get; set; } }
+    public enum Client { Web, Mobile, Desktop }
+    public class GetUserByEmailAndPasswordResult { public int Id { get; set; } public string FirstName { get; set; } = ""; public string LastName { get; set; } = ""; public string Email { get; set; } = ""; public string JwtToken { get; set; } = ""; public object role { get; set; } = ""; }
+    public class ApiResponse<T> { public bool WasSuccessful { get; set; } public string Message { get; set; } = ""; public T? Data { get; set; } }
+}

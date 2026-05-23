@@ -1,0 +1,219 @@
+﻿.account-dashboard-container {
+    width: 100%;
+    min-height: calc(100vh - 60px);
+    box-sizing: border-box;
+    padding: 40px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    align-items: stretch;
+    background-color: #f8f9fa;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Sidebar Styling */
+.dashboard-sidebar-panel {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.01);
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.user-identity-card {
+    text-align: left;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.user-display-name {
+    margin: 0 0 8px 0;
+    font-size: 1.35rem;
+    color: #212529;
+    font-weight: 700;
+}
+
+/* Dynamic Role Badge Infrastructure */
+.user-role-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+.customer-badge {
+    color: #157347;
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+}
+
+.admin-badge {
+    color: #b02a37;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+}
+
+/* Sidebar Navigation Controls */
+.sidebar-action-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.premium-purple-btn {
+    background-color: #f3e5f5;
+    color: #6a1b9a;
+}
+
+    .premium-purple-btn:hover {
+        background-color: #e1bee7;
+        transform: translateY(-1px);
+    }
+
+.critical-logout-btn {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+    .critical-logout-btn:hover {
+        background-color: #ffcdd2;
+        transform: translateY(-1px);
+    }
+
+/* Main Workspace Row Layout Configuration */
+.dashboard-main-workspace {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.01);
+    padding: 48px;
+}
+
+.workspace-rows-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+
+
+/* Row Item Frameworks */
+.workspace-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+    .workspace-action-row:hover {
+        border-color: #2e7d32;
+        background-color: #fbfdfb;
+        transform: translateX(4px);
+        box-shadow: 0 4px 16px rgba(46, 125, 50, 0.04);
+    }
+
+.row-left-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.row-icon-frame {
+    width: 48px;
+    height: 48px;
+    padding: 7px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container-blue {
+    background: #e3f2fd;
+    color: #0d6efd;
+}
+
+.container-green {
+    background: #e8f5e9;
+    color: #198754;
+}
+
+.row-text-info h4 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.row-text-info p {
+    margin: 4px 0 0 0;
+    font-size: 0.92rem;
+    color: #6c757d;
+}
+
+.row-action-arrow {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #6c757d;
+    transition: color 0.2s;
+}
+
+.workspace-action-row:hover .row-action-arrow {
+    color: #198754;
+}
+
+/* Adaptability Breakpoints */
+@media(max-width: 992px) {
+    .account-dashboard-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 24px;
+    }
+
+    .dashboard-main-workspace {
+        padding: 32px;
+    }
+
+    .row-icon-frame {
+  
+    }
+}
+
+@media(max-width: 576px) {
+    .workspace-action-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .row-action-arrow {
+        align-self: flex-end;
+    }
+}

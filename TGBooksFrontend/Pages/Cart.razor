@@ -1,0 +1,270 @@
+﻿@page "/cart"
+@using TGBooksFrontend.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Your Shopping Cart</PageTitle>
+
+<div class="cart-workspace-container">
+    <main class="cart-main-view">
+        <header class="cart-header">
+            <h2>Shopping Cart</h2>
+            <span class="cart-count-badge">@((cartItems?.Sum(i => i.Quantity) ?? 0)) Items</span>
+        </header>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="cart-status-alert">
+                <span>@statusMessage</span>
+            </div>
+        }
+
+        @if (isLoading)
+        {
+            <div class="cart-loading-state">
+                <p>Retrieving your selected reading materials. Please wait...</p>
+            </div>
+        }
+        else if (cartItems == null || !cartItems.Any())
+        {
+            <div class="cart-empty-state">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                </svg>
+                <h3>Your cart is empty</h3>
+                <p>Explore our library collection to add books to your personal shelf.</p>
+                <button class="continue-shopping-btn" @onclick='() => Navigation.NavigateTo("books")'>Browse Catalogue</button>
+            </div>
+        }
+        else
+        {
+            <div class="cart-content-split">
+                <!-- Cart Items List -->
+                <div class="cart-items-list">
+                    @foreach (var item in cartItems)
+                    {
+                        <div class="cart-item-card" @key="item.Id">
+                            <div class="item-image-wrapper">
+                                <img src="@(string.IsNullOrEmpty(item.ImageURL) ? "images/placeholder-book.png" : item.ImageURL)" alt="@item.Title" />
+                            </div>
+
+                            <div class="item-details">
+                                <h4 class="item-title">@item.Title</h4>
+                                <span class="item-meta-tag">Language: @GetLanguageDisplay(item.Language)</span>
+                            </div>
+
+                            <div class="item-quantity-controls">
+                                <button class="qty-btn" @onclick="() => UpdateItemQuantity(item, item.Quantity - 1)" disabled="@(item.Quantity <= 1 || isProcessing)">−</button>
+                                <span class="qty-display">@item.Quantity</span>
+                                <button class="qty-btn" @onclick="() => UpdateItemQuantity(item, item.Quantity + 1)" disabled="@isProcessing">+</button>
+                            </div>
+
+                            <div class="item-actions">
+                                <button class="remove-item-btn" @onclick="() => RemoveItemFromCart(item.Id)" disabled="@isProcessing" title="Remove Item">
+                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3h11V2h-11v1z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Summary Sidebar -->
+                <aside class="cart-summary-sidebar">
+                    <div class="summary-card">
+                        <h3>Order Summary</h3>
+
+                        <div class="summary-row">
+                            <span>Unique Titles</span>
+                            <span>@cartItems.Count</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Total Volume Items</span>
+                            <span>@cartItems.Sum(i => i.Quantity)</span>
+                        </div>
+
+                        <hr class="summary-divider" />
+
+                        <div class="shipping-notice-box">
+                            <strong>Standard Distribution Delivery</strong>
+                            <p>Shipping logistics parameters handled relative to Georgian regional branches.</p>
+                        </div>
+
+                        <button class="checkout-submit-btn" @onclick="ProceedToCheckout" disabled="@(isProcessing || !cartItems.Any())">
+                            Proceed to Checkout
+                        </button>
+                    </div>
+                </aside>
+            </div>
+        }
+    </main>
+</div>
+
+@code {
+    private List<GetCartItem>? cartItems;
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCartData();
+    }
+
+    private string GetLanguageDisplay(int languageValue)
+    {
+        return languageValue switch
+        {
+            0 => "English",
+            1 => "Georgian",
+            2 => "Russian",
+            3 => "German",
+            4 => "French",
+            5 => "Spanish",
+            6 => "Polish",
+            _ => "Unknown"
+        };
+    }
+
+    private async Task LoadCartData()
+    {
+        try
+        {
+            isLoading = true;
+            statusMessage = "";
+
+            var response = await Http.GetFromJsonAsync<ApiResponse<ICollection<GetCartItem>>>("users/cart");
+
+            if (response != null && response.WasSuccessful)
+            {
+                cartItems = response.Data?.ToList() ?? new List<GetCartItem>();
+            }
+            else
+            {
+                statusMessage = response?.Message ?? "Failed to securely load cart allocations.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Unable to connect to system service records.";
+            Console.WriteLine($"Cart Fetch Crash: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateItemQuantity(GetCartItem item, int newQuantity)
+    {
+        if (newQuantity < 1 || isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            statusMessage = "";
+
+            // Matches PUT payload contract model: ChangeCartItemQuantity
+            var payload = new { CartItemId = item.Id, Quantity = newQuantity };
+            var httpResponse = await Http.PutAsJsonAsync("users/cart", payload);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<GetCartItem>>();
+                if (apiResponse != null && apiResponse.WasSuccessful)
+                {
+                    item.Quantity = apiResponse.Data?.Quantity ?? newQuantity;
+                    statusMessage = "Cart distribution amounts balanced.";
+                }
+                else
+                {
+                    statusMessage = apiResponse?.Message ?? "Could not modify item totals.";
+                }
+            }
+            else if (httpResponse.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var errorResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<GetCartItem>>();
+                statusMessage = errorResponse?.Message ?? "Stock capacity limit exceeded.";
+            }
+            else
+            {
+                statusMessage = "Server returned an error updated stock records.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Failed to synchronize adjustments with server counters.";
+            Console.WriteLine($"Quantity Mod Fault: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task RemoveItemFromCart(int itemId)
+    {
+        if (isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            statusMessage = "";
+
+            // Matches DELETE payload model structural configuration: RemoveCartItem
+            var payload = new { CartItemId = itemId };
+
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri(Http.BaseAddress + "users/cart"),
+                Content = JsonContent.Create(payload)
+            };
+
+            var httpResponse = await Http.SendAsync(request);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<int?>>();
+                if (apiResponse != null && apiResponse.WasSuccessful)
+                {
+                    cartItems?.RemoveAll(i => i.Id == itemId);
+                    statusMessage = "Item removed successfully from your tracking allocation.";
+                }
+                else
+                {
+                    statusMessage = apiResponse?.Message ?? "Could not purge item from allocation list.";
+                }
+            }
+            else
+            {
+                statusMessage = "Failed to execute item verification command.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Failed to complete item purge operation.";
+            Console.WriteLine($"Item Deletion Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void ProceedToCheckout()
+    {
+        Navigation.NavigateTo("user-profile/details");
+    }
+
+    // Generic wrapper to safely cast anonymous/standard response payloads
+    public class ApiResponse<T>
+    {
+        public bool WasSuccessful { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public T? Data { get; set; }
+    }
+}

@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">TGBooks</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -14,6 +16,7 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="categories">
                 <img src="images/category.svg"
@@ -22,21 +25,39 @@
                 Categories
             </NavLink>
         </div>
+
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Sales">
+            <NavLink class="nav-link" href="discounts">
                 <img src="images/sale.svg"
                      style="width: 1.25rem; height: 1.25rem; margin-right: 0.7rem; filter: invert(1);"
                      alt="" />
                 Sales
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="User">
-                <img src="images/user.svg"
-                     style="width: 1.25rem; height: 1.25rem; margin-right: 0.7rem; filter: invert(1);"
-                     alt="" /> User
-            </NavLink>
-        </div>
+
+        @* MERGED SYSTEM: DYNAMICALLY RENDER BUTTON LABELS WHILE PRESERVING VECTOR ICON ASSETS *@
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="user-profile">
+                        <img src="images/user.svg"
+                             style="width: 1.25rem; height: 1.25rem; margin-right: 0.7rem; filter: invert(1);"
+                             alt="" />
+                        User
+                    </NavLink>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <img src="images/user.svg"
+                             style="width: 1.25rem; height: 1.25rem; margin-right: 0.7rem; filter: invert(1);"
+                             alt="" />
+                        Sign In
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 

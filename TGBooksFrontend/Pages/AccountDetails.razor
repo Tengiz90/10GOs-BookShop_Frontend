@@ -1,0 +1,253 @@
+﻿@page "/user-profile/details"
+@using TGBooksFrontend.Models
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+<PageTitle>Manage Profile Settings</PageTitle>
+
+<div class="account-dashboard-container profile-edit-layout">
+    @if (sessionData != null)
+    {
+        <main class="dashboard-main-workspace full-stretch-view">
+            <header class="workspace-management-header">
+                <button class="back-nav-btn" @onclick="GoBack">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                    </svg>
+                    <span>Back to Dashboard</span>
+                </button>
+                <h2>Manage Profile Settings</h2>
+            </header>
+
+            @if (!string.IsNullOrEmpty(statusMessage))
+            {
+                <div class="status-toast-notification">
+                    ✨ @statusMessage
+                </div>
+            }
+
+            <div class="details-form-flex-grid">
+
+                <EditForm Model="nameModel" OnValidSubmit="UpdatePersonalNames">
+                    <div class="form-card-column">
+                        <h3>Personal Identification</h3>
+                        <p style="color: #6c757d; font-size: 0.88rem; margin: -10px 0 10px 0;">
+                            Configure your platform identity metadata parameters.
+                        </p>
+
+                        <div class="input-row-split">
+                            <div class="input-field-group">
+                                <label>First Name</label>
+                                <input type="text" @bind-value="nameModel.FirstName" required />
+                            </div>
+                            <div class="input-field-group">
+                                <label>Last Name</label>
+                                <input type="text" @bind-value="nameModel.LastName" required />
+                            </div>
+                        </div>
+
+                        <div class="input-field-group">
+                            <label>Primary E-mail Address (Read Only)</label>
+                            <input type="email" value="@sessionData.Email" class="locked-country-input" readonly />
+                        </div>
+
+                        <button type="submit" class="save-changes-btn target-green" disabled="isSavingName">
+                            @(isSavingName ? "Synchronizing..." : "Save Identity Info")
+                        </button>
+                    </div>
+                </EditForm>
+
+                <EditForm Model="billingModel" OnValidSubmit="UpdateBillingAddress">
+                    <div class="form-card-column">
+                        <h3>Checkout Billing Configuration</h3>
+                        <p style="color: #6c757d; font-size: 0.88rem; margin: -10px 0 10px 0;">
+                            Manage address points and localization properties.
+                        </p>
+
+                        <div class="input-field-group">
+                            <label>Street Address Line 1 *</label>
+                            <input type="text" @bind-value="billingModel.Address1" placeholder="123 Bookworm Lane" required />
+                        </div>
+
+                        <div class="input-field-group">
+                            <label>Street Address Line 2 (Optional)</label>
+                            <input type="text" @bind-value="billingModel.Address2" placeholder="Apt, Suite, Building, etc." />
+                        </div>
+
+                        <div class="input-row-split">
+                            <div class="input-field-group">
+                                <label>City Location</label>
+                                <input type="text" @bind-value="billingModel.City" placeholder="Tbilisi" required />
+                            </div>
+                            <div class="input-field-group">
+                                <label>Postal / Zip Code</label>
+                                <input type="text" @bind-value="billingModel.PostalCode" placeholder="0101" required />
+                            </div>
+                        </div>
+
+                        <div class="input-field-group">
+                            <label>Country Destination</label>
+                            <input type="text" value="Georgia" class="locked-country-input" readonly />
+                        </div>
+
+                        <button type="submit" class="save-changes-btn primary-purple" disabled="isSavingBilling">
+                            @(isSavingBilling ? "Saving details..." : "Save Billing Address")
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </main>
+    }
+    else
+    {
+        <div class="loading-state-indicator">
+            <p>Verifying secure user session parameters. Please wait...</p>
+        </div>
+    }
+</div>
+
+@code {
+    private UserSession? sessionData;
+    private EditUserName nameModel = new();
+    private UpdateBillingAddress billingModel = new();
+
+    private bool isSavingName = false;
+    private bool isSavingBilling = false;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        sessionData = ((CustomAuthStateProvider)AuthStateProvider).GetCurrentUserSession();
+
+        if (sessionData == null)
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        nameModel.FirstName = sessionData.FirstName;
+        nameModel.LastName = sessionData.LastName;
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<GetUserBillingInfoResult>>("users/billing-info");
+
+            if (response != null && response.WasSuccessful && response.Data != null)
+            {
+                nameModel.FirstName = response.Data.FirstName;
+                nameModel.LastName = response.Data.LastName;
+
+                billingModel.Address1 = response.Data.Address1 ?? "";
+                billingModel.Address2 = response.Data.Address2 ?? "";
+                billingModel.City = response.Data.City ?? "";
+                billingModel.PostalCode = response.Data.PostalCode ?? "";
+
+                if (sessionData.FirstName != response.Data.FirstName || sessionData.LastName != response.Data.LastName)
+                {
+                    sessionData.FirstName = response.Data.FirstName;
+                    sessionData.LastName = response.Data.LastName;
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(sessionData);
+                }
+            }
+            else
+            {
+                statusMessage = "Notice: Address profiles could not be loaded from remote system storage counters.";
+            }
+        }
+        catch (Exception ex)
+        {
+            billingModel.Address1 = "";
+            billingModel.Address2 = "";
+            billingModel.City = "";
+            billingModel.PostalCode = "";
+            Console.WriteLine($"Initialization Data Fault: {ex.Message}");
+        }
+    }
+
+    private async Task UpdatePersonalNames()
+    {
+        isSavingName = true;
+        statusMessage = "";
+
+        try
+        {
+            var httpResponse = await Http.PutAsJsonAsync("users/edit-name", nameModel);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<EditUserNameResult>>();
+
+                if (apiResponse != null && apiResponse.WasSuccessful)
+                {
+                    sessionData.FirstName = nameModel.FirstName;
+                    sessionData.LastName = nameModel.LastName;
+
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(sessionData);
+                    statusMessage = "Identity profile names have been updated successfully!";
+                    StateHasChanged();
+                }
+                else
+                {
+                    statusMessage = apiResponse?.Message ?? "An error occurred while updating profile data.";
+                }
+            }
+            else
+            {
+                statusMessage = "An unexpected server error occurred while updating profile data.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Connection failed: {ex.Message}";
+        }
+        finally
+        {
+            isSavingName = false;
+        }
+    }
+
+    private async Task UpdateBillingAddress()
+    {
+        isSavingBilling = true;
+        statusMessage = "";
+
+        try
+        {
+            var httpResponse = await Http.PutAsJsonAsync("users/edit-billing-address", billingModel);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                // Added <object> here to fulfill the generic type requirement of ApiResponse<T>
+                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<object>>();
+
+                if (apiResponse != null && apiResponse.WasSuccessful)
+                {
+                    statusMessage = "Billing destinations configured correctly!";
+                }
+                else
+                {
+                    statusMessage = apiResponse?.Message ?? "Failed to synchronize billing address adjustments.";
+                }
+            }
+            else
+            {
+                statusMessage = "Failed to synchronize billing address adjustments.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Connection failed: {ex.Message}";
+        }
+        finally
+        {
+            isSavingBilling = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("user-profile");
+    }
+}

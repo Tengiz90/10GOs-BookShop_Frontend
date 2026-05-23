@@ -1,0 +1,135 @@
+﻿@page "/user-profile"
+@using System.IdentityModel.Tokens.Jwt
+@using TGBooksFrontend
+@using TGBooksFrontend.Models
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>My Account</PageTitle>
+
+<div class="account-dashboard-container">
+    @if (sessionData != null)
+    {
+        <aside class="dashboard-sidebar-panel">
+            <div class="user-identity-card">
+                <h3 class="user-display-name">@sessionData.FirstName @sessionData.LastName</h3>
+
+                @if (sessionData.Role == "0")
+                {
+                    <span class="user-role-tag admin-badge">Admin</span>
+                }
+                else
+                {
+                    <span class="user-role-tag customer-badge">Customer</span>
+                }
+            </div>
+
+            <nav class="sidebar-action-menu">
+                <button class="sidebar-menu-item premium-purple-btn" @onclick="GoToCart">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                    </svg>
+                    <span>Proceed to Shopping Cart</span>
+                </button>
+
+                <button class="sidebar-menu-item critical-logout-btn" @onclick="HandleLogout">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0v2z" />
+                        <path fill-rule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z" />
+                    </svg>
+                    <span>Sign Out of Account</span>
+                </button>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main-workspace">
+            <div class="workspace-rows-stack">
+
+                <div class="workspace-action-row" @onclick="GoToAccountDetails">
+                    <div class="row-left-content">
+                        <div class="row-icon-frame container-blue">
+                            <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
+                            </svg>
+                        </div>
+                        <div class="row-text-info">
+                            <h4>Account Profile Details</h4>
+                            <p>Update your legal registration names, address entries, and checkout configurations.</p>
+                        </div>
+                    </div>
+                    <div class="row-action-arrow">Manage Details →</div>
+                </div>
+
+                <div class="workspace-action-row" @onclick="GoToOrderHistory">
+                    <div class="row-left-content">
+                        <div class="row-icon-frame container-green">
+                            <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                            </svg>
+                        </div>
+                        <div class="row-text-info">
+                            <h4>Order History & Receipts</h4>
+                            <p>Track ongoing fulfillments, check live distribution statuses, and review transaction logs.</p>
+                        </div>
+                    </div>
+                    <div class="row-action-arrow">View Logs →</div>
+                </div>
+
+            </div>
+        </main>
+    }
+</div>
+
+@code {
+    private UserSession? sessionData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var customProvider = (CustomAuthStateProvider)AuthStateProvider;
+
+        // Ensure state has read local storage data cache
+        await customProvider.GetAuthenticationStateAsync();
+        sessionData = customProvider.GetCurrentUserSession();
+
+        if (sessionData == null || string.IsNullOrEmpty(sessionData.JwtToken) || IsJwtExpired(sessionData.JwtToken))
+        {
+            // Clean state and tracking files if it is dead/expired
+            if (sessionData != null)
+            {
+                await customProvider.MarkUserAsLoggedOut();
+            }
+
+            Navigation.NavigateTo("login");
+        }
+    }
+
+    private bool IsJwtExpired(string token)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(token)) return true;
+
+            var jwtToken = handler.ReadJwtToken(token);
+
+            // Check token expiration metadata claim parameter against UTC timeline limits
+            return jwtToken.ValidTo < DateTime.UtcNow;
+        }
+        catch
+        {
+            // Fail safe and flag as expired if token structural parsing fails
+            return true;
+        }
+    }
+
+    private void GoToCart() => Navigation.NavigateTo("cart");
+    private void GoToAccountDetails() => Navigation.NavigateTo("user-profile/details");
+    private void GoToOrderHistory() => Navigation.NavigateTo("orders");
+
+    private async Task HandleLogout()
+    {
+        await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+        Navigation.NavigateTo("");
+    }
+}
