@@ -1,21 +1,32 @@
-﻿@page "/discounts"
+﻿@page "/books"
 @using TGBooksFrontend.Models
 @inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 @inject TGBooksFrontend.Services.CartService CartService
 
-<PageTitle>Promotions & Discounts</PageTitle>
+<PageTitle>Category Books</PageTitle>
+
+<div class="category-books-header">
+    <button class="back-btn" @onclick="GoBack">
+        <span class="arrow">←</span> Go Back
+    </button>
+    <h3>Books in the Category</h3>
+</div>
+<hr />
 
 @if (books == null)
 {
     <div class="loading-container">
         <div class="spinner"></div>
-        <p>Loading discount deals...</p>
+        <p>Loading books for this category...</p>
     </div>
 }
 else if (!books.Any())
 {
     <div class="loading-container">
-        <p>There are currently no active promotional book sales available.</p>
+        <p>No books available in this category right now.</p>
     </div>
 }
 else
@@ -70,7 +81,7 @@ else
         }
     </div>
 
-    @* Reused Home Pagination Controls *@
+    @* Reused Pagination Footer Controls *@
     <div class="pagination-footer">
         <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
         <span>Page @currentPage</span>
@@ -84,9 +95,51 @@ else
     private const int pageSize = 20;
     private bool hasNextPage = false;
 
-    protected override async Task OnInitializedAsync()
+    // Captures ?categoryId=X from the routing path automatically
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int CategoryId { get; set; }
+
+    // Listens for external routing value mutations
+    protected override async Task OnParametersSetAsync()
     {
+        // Reset page number back to 1 if the user switches categories directly
+        currentPage = 1;
         await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            // Matches backend route signature: [HttpGet("page")]
+            var url = $"books/page?categoryId={CategoryId}&pageNumber={currentPage}&pageSize={pageSize}";
+
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
+
+            if (response != null && response.WasSuccessful && response.Data != null)
+            {
+                books = response.Data;
+                hasNextPage = books.Count == pageSize;
+            }
+            else
+            {
+                books = new List<Book>();
+                hasNextPage = false;
+                Console.WriteLine($"API Warning: {response?.Message ?? "Unknown error"}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching category books: {ex.Message}");
+            books = new List<Book>();
+            hasNextPage = false;
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await JS.InvokeVoidAsync("history.back");
     }
 
     private string GetLanguageDisplay(int languageValue)
@@ -102,34 +155,6 @@ else
             6 => "Polish",
             _ => "Unknown"
         };
-    }
-
-    private async Task LoadData()
-    {
-        try
-        {
-            // Appends onSale=true parameter directly to target your [HttpGet("page")] query options
-            var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&onSale=true";
-
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
-
-            if (response != null && response.WasSuccessful && response.Data != null)
-            {
-                books = response.Data;
-                hasNextPage = books.Count == pageSize;
-            }
-            else
-            {
-                books = new List<Book>();
-                hasNextPage = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error fetching data: {ex.Message}");
-            books = new List<Book>();
-            hasNextPage = false;
-        }
     }
 
     private async Task AddToCart(Book book)

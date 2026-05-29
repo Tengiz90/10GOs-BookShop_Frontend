@@ -1,13 +1,71 @@
-﻿/* Grid Layout */
+﻿The white spacing looks a bit loose because the horizontal line (`<hr />`) below your title has default browser margins, and the `.book-grid` wrapper has its own layout padding pushing things down even further.
+
+Reducing the margins around the `<hr / > ` line and tightening up the top padding on the `.book-grid` container brings the cards up exactly where they belong.
+
+Here is your updated style sheet:
+
+### `AuthorBooks.razor.css`
+
+```css
+/* Header Layout styling */
+.author-books-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+h3 {
+    color: #1e293b;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 15px 0 0 0;
+}
+
+.highlight-author {
+    color: #2e7d32;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 8px; /* Tightened gap above the line */
+    margin-bottom: 12px; /* Halved the bottom margin to pull books up */
+}
+
+/* Back History Navigation Button */
+.back-btn {
+    align-self: flex-start;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease-in-out;
+}
+
+    .back-btn:hover {
+        background-color: #f0fdf4;
+        border-color: #a7f3d0;
+        color: #166534;
+    }
+
+/* Responsive Grid setup matching other components */
 .book-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding: 20px;
+    padding: 0 10px 10px 10px; /* Changed top padding from 10px to 0 to pull cards higher */
     background-color: #f5f5f5;
+    border-radius: 12px;
 }
 
-/* Card Alignment */
 .book-card {
     background: white;
     border-radius: 12px;
@@ -17,14 +75,9 @@
     flex-direction: column;
     padding-top: 10px;
     height: 100%;
-    transition: transform 0.2s;
 }
 
-    .book-card:hover {
-        transform: translateY(-5px);
-    }
-
-/* Container for positioning the badge OVER the image */
+/* IMAGE TOUCHES TOP, LEFT, RIGHT EDGES */
 .image-container {
     position: relative;
     width: 100%;
@@ -49,16 +102,16 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #d32f2f; /* Accentuated Red variant for a clean sales theme */
+    background-color: #d32f2f;
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: bold;
     z-index: 20;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+/* Text and Meta Blocks */
 .book-info {
     padding: 15px;
     display: flex;
@@ -82,20 +135,12 @@
     overflow: hidden;
 }
 
-.author-name {
+.author-name-static {
     margin-bottom: 10px;
     font-weight: 500;
-}
-
-.author-link {
-    color: #2e7d32;
-    text-decoration: none;
+    color: #666;
     font-size: 0.85rem;
 }
-
-    .author-link:hover {
-        text-decoration: underline;
-    }
 
 .book-detail {
     font-size: 0.8rem;
@@ -103,12 +148,13 @@
     margin: 2px 0;
 }
 
+/* Actions Layout */
 .add-to-cart-btn {
     background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 25px;
-    padding: 10px;
+    padding: 20px;
     width: 100%;
     font-weight: bold;
     cursor: pointer;
@@ -125,30 +171,6 @@
         cursor: not-allowed;
     }
 
-.pagination-footer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    padding: 30px;
-    background: #f5f5f5;
-}
-
-.page-btn {
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    background-color: #fff;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.page-btn:disabled {
-    background-color: #e0e0e0;
-    color: #999;
-    cursor: not-allowed;
-}
-
 .loading-container {
     text-align: center;
     padding: 50px;
@@ -156,7 +178,6 @@
     color: #666;
 }
 
-/* Spinner Styles */
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
     width: 36px;
@@ -176,3 +197,5 @@
         transform: rotate(360deg);
     }
 }
+
+```

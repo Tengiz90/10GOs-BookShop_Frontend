@@ -1,13 +1,62 @@
-﻿/* Grid Layout */
+﻿/* Header Context Layout Styles */
+.category-books-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+h3 {
+    color: #1e293b;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 15px 0 0 0;
+}
+
+.highlight-category {
+    color: #2e7d32;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+/* Go Back Navigation Interaction Pattern */
+.back-btn {
+    align-self: flex-start;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease-in-out;
+}
+
+    .back-btn:hover {
+        background-color: #f0fdf4;
+        border-color: #a7f3d0;
+        color: #166534;
+    }
+
+/* Grid Layout Alignment Controls */
 .book-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding: 20px;
+    padding: 20px 10px 10px 10px;
     background-color: #f5f5f5;
+    border-radius: 12px;
 }
 
-/* Card Alignment */
 .book-card {
     background: white;
     border-radius: 12px;
@@ -24,7 +73,6 @@
         transform: translateY(-5px);
     }
 
-/* Container for positioning the badge OVER the image */
 .image-container {
     position: relative;
     width: 100%;
@@ -36,6 +84,7 @@
     overflow: hidden;
 }
 
+/* FIXED: Changed to 0 so cover artwork displays in sharp rectangular format */
 .book-image {
     max-width: 100%;
     max-height: 100%;
@@ -43,13 +92,14 @@
     height: auto;
     object-fit: contain;
     display: block;
+    border-radius: 0;
 }
 
 .sale-badge {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #d32f2f; /* Accentuated Red variant for a clean sales theme */
+    background-color: #d32f2f;
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
@@ -143,11 +193,11 @@
     font-weight: 500;
 }
 
-.page-btn:disabled {
-    background-color: #e0e0e0;
-    color: #999;
-    cursor: not-allowed;
-}
+    .page-btn:disabled {
+        background-color: #e0e0e0;
+        color: #999;
+        cursor: not-allowed;
+    }
 
 .loading-container {
     text-align: center;
@@ -156,7 +206,6 @@
     color: #666;
 }
 
-/* Spinner Styles */
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
     width: 36px;

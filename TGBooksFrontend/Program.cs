@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using TGBooksFrontend.Services;
 
 namespace TGBooksFrontend
 {
@@ -21,6 +22,9 @@ namespace TGBooksFrontend
                 client.BaseAddress = new Uri("https://tg-books-backend-gyfhgbaye3evbpek.polandcentral-01.azurewebsites.net/api/");
             })
             .AddHttpMessageHandler<BlazorAuthorizationHandler>();
+
+
+            builder.Services.AddScoped<CartService>();
 
             // 3. Register the token-aware client as the default HttpClient for your components
             builder.Services.AddScoped(sp =>

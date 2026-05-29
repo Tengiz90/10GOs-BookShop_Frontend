@@ -1,0 +1,140 @@
+﻿@page "/author/{AuthorId:int}"
+@using TGBooksFrontend.Models
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject TGBooksFrontend.Services.CartService CartService
+
+<PageTitle>Books by @authorName</PageTitle>
+
+<div class="author-books-header">
+    <button class="back-btn" @onclick="GoBack">
+        <span class="arrow">←</span> Go Back
+    </button>
+    <h3>Books by <span class="highlight-author">@authorName</span></h3>
+</div>
+<hr />
+
+@if (books == null)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading books...</p>
+    </div>
+}
+else if (!books.Any())
+{
+    <div class="loading-container">
+        <p>No books available for this author right now.</p>
+    </div>
+}
+else
+{
+    <div class="book-grid">
+        @foreach (var book in books)
+        {
+            <div class="book-card" @key="book.Id">
+                <div class="image-container">
+                    <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
+
+                    @if (book.OnSale && book.OffPercentage > 0)
+                    {
+                        <div class="sale-badge">@book.OffPercentage% OFF</div>
+                    }
+                </div>
+
+                <div class="book-info">
+                    <div class="book-text-content">
+                        <h4 class="book-title" title="@book.Title">@book.Title</h4>
+
+                        <p class="author-name-static">@authorName</p>
+
+                        <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
+                        <p class="book-detail">Available: @book.Quantity</p>
+                    </div>
+
+                    @if (book.AlreadyInCart)
+                    {
+                        <button class="add-to-cart-btn secondary" disabled>In Cart</button>
+                    }
+                    else
+                    {
+                        <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Book>? books;
+    private string authorName = "Author";
+
+    [Parameter]
+    public int AuthorId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAuthorData();
+    }
+
+    private async Task LoadAuthorData()
+    {
+        try
+        {
+            var url = $"books/get-by-author?authorId={AuthorId}";
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
+
+            if (response != null && response.WasSuccessful && response.Data != null)
+            {
+                books = response.Data;
+
+                // Dynamically grab the author's name from the first book returned
+                var firstBook = books.FirstOrDefault();
+                if (firstBook?.Authors != null && firstBook.Authors.Any())
+                {
+                    var exactAuthor = firstBook.Authors.FirstOrDefault(a => a.Id == AuthorId);
+                    authorName = exactAuthor != null ? exactAuthor.Name : firstBook.Authors.First().Name;
+                }
+            }
+            else
+            {
+                books = new List<Book>();
+                Console.WriteLine($"API Warning: {response?.Message ?? "Unknown error"}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching author data: {ex.Message}");
+            books = new List<Book>();
+        }
+    }
+
+    private async Task GoBack()
+    {
+        // Safely uses the window history to trace back to home, sales, or categories correctly
+        await JS.InvokeVoidAsync("history.back");
+    }
+
+    private string GetLanguageDisplay(int languageValue)
+    {
+        return languageValue switch
+        {
+            0 => "English",
+            1 => "Georgian",
+            2 => "Russian",
+            3 => "German",
+            4 => "French",
+            5 => "Spanish",
+            6 => "Polish",
+            _ => "Unknown"
+        };
+    }
+
+    private async Task AddToCart(Book book)
+    {
+        await CartService.AddToCartAsync(book);
+    }
+}

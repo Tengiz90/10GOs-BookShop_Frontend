@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject TGBooksFrontend.Services.CartService CartService
 
 <PageTitle>Home</PageTitle>
 
@@ -181,26 +182,7 @@ else
 
     private async Task AddToCart(Book book)
     {
-        try
-        {
-            // Verify security state via CustomAuthStateProvider reference checks
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (user.Identity == null || !user.Identity.IsAuthenticated)
-            {
-                // Force an immediate UI reroute to the sign-in portal if unauthorized
-                Navigation.NavigateTo("login");
-                return;
-            }
-
-            book.AlreadyInCart = true;
-            Console.WriteLine($"Added {book.Title} to cart.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error adding to cart: {ex.Message}");
-        }
+        await CartService.AddToCartAsync(book);
     }
 
     private async Task NextPage()

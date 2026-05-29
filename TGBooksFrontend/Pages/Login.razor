@@ -4,6 +4,8 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
+<PageTitle>Sign In</PageTitle>
+
 <div class="login-page-container">
     <div class="login-card">
         <h3>Welcome Back</h3>
@@ -29,6 +31,12 @@
                 @(isSubmitting ? "Signing in..." : "Sign In")
             </button>
         </EditForm>
+
+        <hr class="form-divider" />
+
+        <div class="register-redirect-footer">
+            <p>Don't have an account? <a href="/register" class="register-link">Register Here</a></p>
+        </div>
     </div>
 </div>
 
