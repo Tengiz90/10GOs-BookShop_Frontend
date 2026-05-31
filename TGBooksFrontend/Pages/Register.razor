@@ -1,6 +1,352 @@
 ﻿@page "/register"
-<h3>Register</h3>
+@using TGBooksFrontend.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Create Account</PageTitle>
+
+<div class="auth-wrapper">
+    <div class="register-container">
+        <header class="register-header">
+            <h2>Create Account</h2>
+            <p>Join TGBooks and build your personal digital library shelf.</p>
+        </header>
+
+        @if (!string.IsNullOrEmpty(globalErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <span>@globalErrorMessage</span>
+            </div>
+        }
+
+        <EditForm EditContext="@editContext" OnSubmit="HandleFormSubmission">
+            <div class="form-grid">
+                <div class="form-section-title">Personal Information</div>
+
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <InputText id="firstName" class="@($"form-control {(HasError("FirstName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.FirstName" placeholder="John" />
+                    @if (HasError("FirstName"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("FirstName")</span>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <InputText id="lastName" class="@($"form-control {(HasError("LastName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.LastName" placeholder="Doe" />
+                    @if (HasError("LastName"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("LastName")</span>
+                    }
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="email">Email Address</label>
+                    <InputText id="email" type="email" class="@($"form-control {(HasError("Email") ? "invalid-field" : "")}")" @bind-Value="registrationModel.Email" placeholder="name@example.com" />
+                    @if (HasError("Email"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("Email")</span>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <InputDate id="dob" class="@($"form-control {(HasError("DateOfBirth") ? "invalid-field" : "")}")" @bind-Value="registrationModel.DateOfBirth" />
+                    @if (HasError("DateOfBirth"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("DateOfBirth")</span>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <InputText id="password" type="password" class="@($"form-control {(HasError("Password") ? "invalid-field" : "")}")" @bind-Value="registrationModel.Password" placeholder="••••••••" />
+                    @if (HasError("Password"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("Password")</span>
+                    }
+                </div>
+
+                <div class="form-section-title">Delivery Parameters</div>
+
+                <div class="form-group full-width">
+                    <label for="address1">Address Line 1</label>
+                    <InputText id="address1" class="@($"form-control {(HasError("Address1") ? "invalid-field" : "")}")" @bind-Value="registrationModel.Address1" placeholder="Street name and number" />
+                    @if (HasError("Address1"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("Address1")</span>
+                    }
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="address2">Address Line 2 (Optional)</label>
+                    <InputText id="address2" class="form-control" @bind-Value="registrationModel.Address2" placeholder="Apartment, suite, unit, etc." />
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <InputText id="city" class="@($"form-control {(HasError("City") ? "invalid-field" : "")}")" @bind-Value="registrationModel.City" placeholder="Tbilisi" />
+                    @if (HasError("City"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("City")</span>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="postalCode">Postal Code</label>
+                    <InputText id="postalCode" class="@($"form-control {(HasError("PostalCode") ? "invalid-field" : "")}")" @bind-Value="registrationModel.PostalCode" placeholder="0100" />
+                    @if (HasError("PostalCode"))
+                    {
+                        <span class="field-error-msg">@GetFieldError("PostalCode")</span>
+                    }
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="country">Country</label>
+                    <input id="country" type="text" class="form-control disabled-input" value="@registrationModel.Country" disabled />
+                </div>
+            </div>
+
+            <button type="submit" class="submit-register-btn" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span class="spinner"></span>
+                    <span>Processing registration...</span>
+                }
+                else
+                {
+                    <span>Register Account</span>
+                }
+            </button>
+        </EditForm>
+
+        <footer class="register-footer">
+            <p>Already have an account? <a href="/login" class="login-link">Sign In</a></p>
+        </footer>
+    </div>
+</div>
 
 @code {
+    private AddUser registrationModel = new();
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
 
+    private bool isSubmitting = false;
+    private string globalErrorMessage = "";
+
+    private Dictionary<string, string[]> validationErrors = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        editContext = new(registrationModel);
+        messageStore = new(editContext);
+
+        editContext.OnFieldChanged += (sender, eventArgs) =>
+        {
+            validationErrors.Remove(eventArgs.FieldIdentifier.FieldName);
+            editContext.NotifyValidationStateChanged();
+        };
+    }
+
+    private bool HasError(string fieldName) => validationErrors.ContainsKey(fieldName);
+
+    private string GetFieldError(string fieldName) =>
+        validationErrors.TryGetValue(fieldName, out var errs) ? string.Join("\n", errs) : string.Empty;
+
+    private void ClearValidationState()
+    {
+        globalErrorMessage = "";
+        validationErrors.Clear();
+        messageStore?.Clear();
+        editContext?.NotifyValidationStateChanged();
+    }
+
+    private bool ValidateFormClientSide()
+    {
+        bool isValid = true;
+
+        // 1. First Name validation
+        if (string.IsNullOrWhiteSpace(registrationModel.FirstName))
+        {
+            validationErrors["FirstName"] = new[] { "User first name can't be empty." };
+            isValid = false;
+        }
+        else if (registrationModel.FirstName.Length < 2)
+        {
+            validationErrors["FirstName"] = new[] { "User first name must be at least 2 characters long" };
+            isValid = false;
+        }
+        else if (registrationModel.FirstName.Length > 60)
+        {
+            validationErrors["FirstName"] = new[] { "First name length should be less than than 61" };
+            isValid = false;
+        }
+
+        // 2. Last Name validation
+        if (string.IsNullOrWhiteSpace(registrationModel.LastName))
+        {
+            validationErrors["LastName"] = new[] { "User last name can't be empty." };
+            isValid = false;
+        }
+        else if (registrationModel.LastName.Length < 2)
+        {
+            validationErrors["LastName"] = new[] { "User last name must be at least 2 characters long" };
+            isValid = false;
+        }
+        else if (registrationModel.LastName.Length > 60)
+        {
+            validationErrors["LastName"] = new[] { "Last name length should be less than 61" };
+            isValid = false;
+        }
+
+        // 3. Email validation
+        if (string.IsNullOrWhiteSpace(registrationModel.Email))
+        {
+            validationErrors["Email"] = new[] { "Email can't be empty" };
+            isValid = false;
+        }
+        else if (!registrationModel.Email.Contains("@") || !registrationModel.Email.Contains("."))
+        {
+            validationErrors["Email"] = new[] { "Email format is not valid" };
+            isValid = false;
+        }
+
+        // 4. Date of Birth Validation
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (registrationModel.DateOfBirth >= today)
+        {
+            validationErrors["DateOfBirth"] = new[] { "Person can't be born in the future" };
+            isValid = false;
+        }
+        else if (registrationModel.DateOfBirth <= today.AddYears(-160))
+        {
+            validationErrors["DateOfBirth"] = new[] { "Person can't be more than 160 years old" };
+            isValid = false;
+        }
+
+        // 5. DETAILED DETECTIVE PASSWORD VALIDATION
+        if (string.IsNullOrWhiteSpace(registrationModel.Password))
+        {
+            validationErrors["Password"] = new[] { "Password can't be empty." };
+            isValid = false;
+        }
+        else
+        {
+            var passwordErrors = new List<string>();
+
+            if (registrationModel.Password.Length < 8)
+            {
+                passwordErrors.Add("• Must be at least 8 characters long.");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(registrationModel.Password, @"[A-Z]"))
+            {
+                passwordErrors.Add("• Must contain at least one uppercase letter (A-Z).");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(registrationModel.Password, @"[a-z]"))
+            {
+                passwordErrors.Add("• Must contain at least one lowercase letter (a-z).");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(registrationModel.Password, @"\d"))
+            {
+                passwordErrors.Add("• Must contain at least one numerical digit (0-9).");
+            }
+
+            if (passwordErrors.Any())
+            {
+                validationErrors["Password"] = passwordErrors.ToArray();
+                isValid = false;
+            }
+        }
+
+        // 6. Address 1 validation
+        if (string.IsNullOrWhiteSpace(registrationModel.Address1))
+        {
+            validationErrors["Address1"] = new[] { "Adress 1 can't be empty." };
+            isValid = false;
+        }
+
+        // 7. City validation
+        if (string.IsNullOrWhiteSpace(registrationModel.City))
+        {
+            validationErrors["City"] = new[] { "City name can't be empty." };
+            isValid = false;
+        }
+
+        // 8. Postal Code validation
+        if (string.IsNullOrWhiteSpace(registrationModel.PostalCode))
+        {
+            validationErrors["PostalCode"] = new[] { "Postal code can't be empty." };
+            isValid = false;
+        }
+
+        editContext?.NotifyValidationStateChanged();
+        return isValid;
+    }
+
+    private async Task HandleFormSubmission()
+    {
+        ClearValidationState();
+
+        if (!ValidateFormClientSide())
+        {
+            globalErrorMessage = "Please correct the highlighted validation errors before submitting.";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+
+            var response = await Http.PostAsJsonAsync("users/register", registrationModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AddUserResult?>>();
+                if (apiResponse != null && apiResponse.WasSuccessful)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Welcome {apiResponse.Data?.FirstName}! Registration was successful.");
+                    Navigation.NavigateTo("login");
+                    return;
+                }
+                globalErrorMessage = apiResponse?.Message ?? "An unexpected processing error occurred.";
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var errorPayload = await response.Content.ReadFromJsonAsync<ValidationResponse>();
+
+                if (errorPayload != null && errorPayload.Errors != null)
+                {
+                    validationErrors = errorPayload.Errors;
+                    globalErrorMessage = "Please correct the highlighted validation anomalies returned from the server.";
+                }
+                else
+                {
+                    globalErrorMessage = "Validation criteria parameters failed.";
+                }
+                editContext?.NotifyValidationStateChanged();
+            }
+            else
+            {
+                globalErrorMessage = "Server metrics rejected the upload sequence.";
+            }
+        }
+        catch (Exception ex)
+        {
+            globalErrorMessage = "A connection fault occurred during data upload parameters.";
+            Console.WriteLine($"Registration Error context: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class ValidationResponse
+    {
+        public bool WasSuccessful { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public Dictionary<string, string[]>? Errors { get; set; }
+    }
 }

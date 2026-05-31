@@ -1,8 +1,10 @@
 ﻿@page "/login"
+@using TGBooksFrontend.Enums
 @using TGBooksFrontend.Models
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Sign In</PageTitle>
 
@@ -40,15 +42,72 @@
     </div>
 </div>
 
+@* FULL SCREEN MODAL OVERLAY FOR EMAIL VERIFICATION *@
+@if (showVerificationOverlay)
+{
+    <div class="verification-screen-overlay">
+        <div class="verification-modal-card">
+            <div class="verification-header">
+                <h4>Verify Your Email</h4>
+                <p>A verification code has been sent to <strong>@signInModel.Email</strong>. Please enter it below to activate your account.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(verificationErrorMessage))
+            {
+                <div class="error-banner">@verificationErrorMessage</div>
+            }
+
+            <EditForm Model="verificationModel" OnValidSubmit="HandleVerificationSubmit">
+                <div class="form-group">
+                    <label>Verification Code</label>
+                    <input type="text" class="form-input verification-code-input"
+                           @bind-value="verificationModel.Code"
+                           @bind-value:event="oninput"
+                           placeholder="0000"
+                           maxlength="4"
+                           inputmode="numeric"
+                           required
+                           disabled="@isVerifying" />
+                </div>
+
+                <div class="verification-actions-grid">
+                    <button type="submit" class="verify-confirm-btn" disabled="@(isVerifying || verificationModel.Code.Length != 4)">
+                        @(isVerifying ? "Verifying..." : "Confirm")
+                    </button>
+
+                    <button type="button" class="verify-cancel-btn" @onclick="CancelVerification" disabled="@isVerifying">
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="verification-logout-wrapper">
+                <button type="button" class="verify-logout-btn" @onclick="LogoutUser" disabled="@isVerifying">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private SignInUser signInModel = new SignInUser { client = Client.Web };
+    private VerificationBindingModel verificationModel = new();
+
     private string? errorMessage;
+    private string? verificationErrorMessage;
+
     private bool isSubmitting = false;
+    private bool isVerifying = false;
+    private bool showVerificationOverlay = false;
+
+    private UserSession? temporarySession;
 
     private async Task HandleLogin()
     {
         isSubmitting = true;
         errorMessage = null;
+
         try
         {
             var responseMessage = await Http.PostAsJsonAsync("users/sign-in", signInModel);
@@ -59,24 +118,45 @@
 
                 if (result != null && result.WasSuccessful && result.Data != null)
                 {
-                    var session = new UserSession
+                    temporarySession = new UserSession
                     {
                         Id = result.Data.Id,
                         FirstName = result.Data.FirstName,
                         LastName = result.Data.LastName,
                         Email = result.Data.Email,
                         JwtToken = result.Data.JwtToken,
-                        Role = result.Data.role.ToString()
+                        Role = result.Data.Role?.ToString() ?? ""
                     };
 
-                    // Called asynchronously now to safely process the storage IO thread pipeline
-                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(session);
+                    if (!result.Data.IsVerified)
+                    {
+                        verificationErrorMessage = null;
+                        verificationModel.Code = string.Empty;
+                        showVerificationOverlay = true;
+                        return;
+                    }
+
+                    if (IsAdminRole(temporarySession.Role))
+                    {
+                        await ShowAdminBlockedAlertAndLogout();
+                        return;
+                    }
+
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(temporarySession);
                     Navigation.NavigateTo("user-profile");
                 }
                 else
                 {
                     errorMessage = result?.Message ?? "Invalid login credentials.";
                 }
+            }
+            else if (responseMessage.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                errorMessage = "Wrong email or password.";
+            }
+            else if (responseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                errorMessage = await ReadBackendErrorMessage(responseMessage, "User was not found.");
             }
             else
             {
@@ -93,8 +173,141 @@
         }
     }
 
-    public class SignInUser { public string Email { get; set; } = ""; public string Password { get; set; } = ""; public Client client { get; set; } }
-    public enum Client { Web, Mobile, Desktop }
-    public class GetUserByEmailAndPasswordResult { public int Id { get; set; } public string FirstName { get; set; } = ""; public string LastName { get; set; } = ""; public string Email { get; set; } = ""; public string JwtToken { get; set; } = ""; public object role { get; set; } = ""; }
-    public class ApiResponse<T> { public bool WasSuccessful { get; set; } public string Message { get; set; } = ""; public T? Data { get; set; } }
+    private async Task<string> ReadBackendErrorMessage(HttpResponseMessage responseMessage, string fallbackMessage)
+    {
+        try
+        {
+            var result = await responseMessage.Content.ReadFromJsonAsync<ApiResponse<object>>();
+
+            if (!string.IsNullOrWhiteSpace(result?.Message))
+            {
+                return result.Message;
+            }
+
+            return fallbackMessage;
+        }
+        catch
+        {
+            return fallbackMessage;
+        }
+    }
+
+    private async Task HandleVerificationSubmit()
+    {
+        if (temporarySession == null || verificationModel.Code.Length != 4)
+        {
+            return;
+        }
+
+        isVerifying = true;
+        verificationErrorMessage = null;
+
+        try
+        {
+            var payload = new
+            {
+                Email = temporarySession.Email,
+                Code = verificationModel.Code
+            };
+
+            var response = await Http.PostAsJsonAsync("users/verify-email", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+                if (result != null && result.WasSuccessful)
+                {
+                    showVerificationOverlay = false;
+
+                    if (IsAdminRole(temporarySession.Role))
+                    {
+                        await ShowAdminBlockedAlertAndLogout();
+                        return;
+                    }
+
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(temporarySession);
+                    await JS.InvokeVoidAsync("alert", "Email verified successfully! Welcome to TGBooks.");
+                    Navigation.NavigateTo("user-profile");
+                    return;
+                }
+
+                verificationErrorMessage = result?.Message ?? "The verification code is incorrect.";
+            }
+            else
+            {
+                verificationErrorMessage = "Verification failed. Please double-check your entry.";
+            }
+        }
+        catch (Exception ex)
+        {
+            verificationErrorMessage = $"Connection error: {ex.Message}";
+        }
+        finally
+        {
+            isVerifying = false;
+        }
+    }
+
+    private bool IsAdminRole(string role)
+    {
+        return role == "0";
+    }
+
+    private async Task ShowAdminBlockedAlertAndLogout()
+    {
+        await JS.InvokeVoidAsync("alert", "You are an admin.\nPlease use mobile application to manage the site.");
+
+        temporarySession = null;
+        showVerificationOverlay = false;
+
+        await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    private void CancelVerification()
+    {
+        showVerificationOverlay = false;
+        temporarySession = null;
+    }
+
+    private async Task LogoutUser()
+    {
+        showVerificationOverlay = false;
+        temporarySession = null;
+
+        await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    public class VerificationBindingModel
+    {
+        private string _code = string.Empty;
+
+        public string Code
+        {
+            get => _code;
+            set
+            {
+                if (value == null)
+                {
+                    _code = string.Empty;
+                    return;
+                }
+
+                var cleanDigits = new string(value.Where(char.IsDigit).ToArray());
+
+                if (cleanDigits.Length > 4)
+                {
+                    _code = cleanDigits.Substring(0, 4);
+                }
+                else
+                {
+                    _code = cleanDigits;
+                }
+            }
+        }
+    }
 }
