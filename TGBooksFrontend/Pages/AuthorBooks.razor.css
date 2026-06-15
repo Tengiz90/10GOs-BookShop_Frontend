@@ -1,4 +1,24 @@
-﻿/* Header Layout styling */
+﻿/* ==========================================================================
+   Page Structural Wrapper (Adds Margins & Full-Height Stretch)
+   ========================================================================== */
+.author-page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Forces wrapper to take full viewport space */
+    padding: 20px 30px; /* Applies clean outer page margins on all sides */
+    background-color: #f5f5f5;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Base content spaces that adapt when rows don't populate */
+.main-fill-space {
+    flex: 1 0 auto;
+}
+
+/* ==========================================================================
+   Header Layout styling
+   ========================================================================== */
 .author-books-header {
     display: flex;
     flex-direction: column;
@@ -22,6 +42,7 @@ hr {
     border-top: 1px solid #e2e8f0;
     margin-top: 8px;
     margin-bottom: 12px;
+    width: 100%;
 }
 
 /* Back History Navigation Button */
@@ -47,14 +68,18 @@ hr {
         color: #166534;
     }
 
-/* Responsive Grid setup matching other components */
+/* ==========================================================================
+   Responsive Grid setup matching other components
+   ========================================================================== */
 .book-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding: 0 10px 10px 10px;
+    padding: 20px 0; /* Clean grid spacing inner borders */
     background-color: #f5f5f5;
     border-radius: 12px;
+    flex: 1 0 auto; /* Claims remaining layout space */
+    align-content: start; /* Stops short card rows from stretching vertically */
 }
 
 .book-card {
@@ -102,7 +127,9 @@ hr {
     z-index: 20;
 }
 
-/* Text and Meta Blocks */
+/* ==========================================================================
+   Text and Meta Blocks
+   ========================================================================== */
 .book-info {
     padding: 15px;
     display: flex;
@@ -150,7 +177,7 @@ hr {
 .final-price {
     font-size: 1.15rem;
     font-weight: bold;
-    color: #000000; /* Overridden to strict deep black text */
+    color: #000000;
 }
 
 .original-price {
@@ -186,11 +213,18 @@ hr {
         cursor: not-allowed;
     }
 
+/* ==========================================================================
+   Loading States & Animations
+   ========================================================================== */
 .loading-container {
     text-align: center;
     padding: 50px;
     font-size: 1.2rem;
     color: #666;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .spinner {

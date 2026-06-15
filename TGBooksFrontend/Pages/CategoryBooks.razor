@@ -8,105 +8,107 @@
 
 <PageTitle>@(string.IsNullOrEmpty(_categoryName) ? "Category" : _categoryName) Books</PageTitle>
 
-<div class="category-books-header">
-    <button class="back-btn" @onclick="GoBack">
-        <span class="arrow">←</span> Go Back
-    </button>
-    @if (!string.IsNullOrEmpty(_categoryName))
+<div class="category-page-container">
+    <div class="category-books-header">
+        <button class="back-btn" @onclick="GoBack">
+            <span class="arrow">←</span> Go Back
+        </button>
+        @if (!string.IsNullOrEmpty(_categoryName))
+        {
+            <h3>Books in <span class="highlight-category">@_categoryName</span> category</h3>
+        }
+        else
+        {
+            <h3>Books in the Category</h3>
+        }
+    </div>
+    <hr />
+
+    @if (books == null)
     {
-        <h3>Books in <span class="highlight-category">@_categoryName</span> category</h3>
+        <div class="loading-container main-fill-space">
+            <div class="spinner"></div>
+            <p>Loading books for this category...</p>
+        </div>
+    }
+    else if (!books.Any())
+    {
+        <div class="loading-container main-fill-space">
+            <p>No books available in this category right now.</p>
+        </div>
     }
     else
     {
-        <h3>Books in the Category</h3>
-    }
-</div>
-<hr />
+        <div class="book-grid">
+            @foreach (var book in books)
+            {
+                <div class="book-card" @key="book.Id">
+                    <div class="image-container">
+                        <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
-@if (books == null)
-{
-    <div class="loading-container">
-        <div class="spinner"></div>
-        <p>Loading books for this category...</p>
-    </div>
-}
-else if (!books.Any())
-{
-    <div class="loading-container">
-        <p>No books available in this category right now.</p>
-    </div>
-}
-else
-{
-    <div class="book-grid">
-        @foreach (var book in books)
-        {
-            <div class="book-card" @key="book.Id">
-                <div class="image-container">
-                    <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
-
-                    @if (book.OnSale && book.OffPercentage > 0)
-                    {
-                        <div class="sale-badge">@book.OffPercentage% OFF</div>
-                    }
-                </div>
-
-                <div class="book-info">
-                    <div class="book-text-content">
-                        <h4 class="book-title">@book.Title</h4>
-
-                        <p class="author-name">
-                            @if (book.Authors != null)
-                            {
-                                @for (int i = 0; i < book.Authors.Count; i++)
-                                {
-                                    var author = book.Authors.ElementAt(i);
-                                    <a href="/author/@author.Id" class="author-link">@author.Name</a>
-
-                                    @if (i < book.Authors.Count - 1)
-                                    {
-                                        <span>, </span>
-                                    }
-                                }
-                            }
-                        </p>
-
-                        <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
-                        <p class="book-detail">Available: @book.Quantity</p>
-
-                        <div class="price-container">
-                            @if (book.OnSale && book.OffPercentage > 0)
-                            {
-                                <span class="final-price">₾@CalculateDiscountedPrice(book.OriginalPrice, book.OffPercentage).ToString("0.00")</span>
-                                <span class="original-price crossed">₾@book.OriginalPrice.ToString("0.00")</span>
-                            }
-                            else
-                            {
-                                <span class="final-price">₾@book.OriginalPrice.ToString("0.00")</span>
-                            }
-                        </div>
+                        @if (book.OnSale && book.OffPercentage > 0)
+                        {
+                            <div class="sale-badge">@book.OffPercentage% OFF</div>
+                        }
                     </div>
 
-                    @if (book.AlreadyInCart)
-                    {
-                        <button class="add-to-cart-btn secondary" disabled>In Cart</button>
-                    }
-                    else
-                    {
-                        <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
-                    }
-                </div>
-            </div>
-        }
-    </div>
+                    <div class="book-info">
+                        <div class="book-text-content">
+                            <h4 class="book-title">@book.Title</h4>
 
-    @* Reused Pagination Footer Controls *@
-    <div class="pagination-footer">
-        <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
-        <span>Page @currentPage</span>
-        <button class="page-btn" disabled="@(!hasNextPage)" @onclick="NextPage">Next</button>
-    </div>
-}
+                            <p class="author-name">
+                                @if (book.Authors != null)
+                                {
+                                    @for (int i = 0; i < book.Authors.Count; i++)
+                                    {
+                                        var author = book.Authors.ElementAt(i);
+                                        <a href="/author/@author.Id" class="author-link">@author.Name</a>
+
+                                        @if (i < book.Authors.Count - 1)
+                                        {
+                                            <span>, </span>
+                                        }
+                                    }
+                                }
+                            </p>
+
+                            <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
+                            <p class="book-detail">Available: @book.Quantity</p>
+
+                            <div class="price-container">
+                                @if (book.OnSale && book.OffPercentage > 0)
+                                {
+                                    <span class="final-price">₾@CalculateDiscountedPrice(book.OriginalPrice, book.OffPercentage).ToString("0.00")</span>
+                                    <span class="original-price crossed">₾@book.OriginalPrice.ToString("0.00")</span>
+                                }
+                                else
+                                {
+                                    <span class="final-price">₾@book.OriginalPrice.ToString("0.00")</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (book.AlreadyInCart)
+                        {
+                            <button class="add-to-cart-btn secondary" disabled>In Cart</button>
+                        }
+                        else
+                        {
+                            <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Reused Pagination Footer Controls *@
+        <div class="pagination-footer">
+            <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
+            <span>Page @currentPage</span>
+            <button class="page-btn" disabled="@(!hasNextPage)" @onclick="NextPage">Next</button>
+        </div>
+    }
+</div>
 
 @code {
     private List<Book>? books;
