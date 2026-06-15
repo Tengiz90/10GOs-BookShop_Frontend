@@ -1,6 +1,7 @@
 ﻿@page "/discounts"
 @using TGBooksFrontend.Models
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @inject TGBooksFrontend.Services.CartService CartService
 
 <PageTitle>Promotions & Discounts</PageTitle>
@@ -24,7 +25,7 @@
         <div class="book-grid">
             @foreach (var book in books)
             {
-                <div class="book-card" @key="book.Id">
+                <div class="book-card" @key="book.Id" @onclick="() => NavigateToBookDetails(book.Id)">
                     <div class="image-container">
                         <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
@@ -174,5 +175,10 @@
             books = null;
             await LoadData();
         }
+    }
+
+    private void NavigateToBookDetails(int bookId)
+    {
+        Navigation.NavigateTo($"book/{bookId}");
     }
 }

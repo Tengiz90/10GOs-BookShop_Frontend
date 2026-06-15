@@ -33,7 +33,7 @@ else
     <div class="book-grid">
         @foreach (var book in books)
         {
-            <div class="book-card" @key="book.Id">
+            <div class="book-card" @key="book.Id" @onclick="() => NavigateToBookDetails(book.Id)">
                 <div class="image-container">
                     <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
@@ -221,5 +221,10 @@ else
             books = null;
             await LoadData();
         }
+    }
+
+    private void NavigateToBookDetails(int bookId)
+    {
+        Navigation.NavigateTo($"book/{bookId}");
     }
 }

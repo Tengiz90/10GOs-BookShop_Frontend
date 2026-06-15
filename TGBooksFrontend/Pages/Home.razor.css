@@ -47,6 +47,7 @@
     padding-top: 10px;
     height: 100%;
     transition: transform 0.2s;
+    cursor: pointer;
 }
 
     .book-card:hover {

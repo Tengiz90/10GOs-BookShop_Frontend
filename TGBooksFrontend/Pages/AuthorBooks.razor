@@ -10,7 +10,7 @@
 
 <div class="author-page-container">
     <div class="author-books-header">
-        <button class="back-btn" @onclick="GoBack">
+        <button class="back-btn" @onclick="GoBack" @onclick="() => NavigateToBookDetails(book.Id)">
             <span class="arrow">←</span> Go Back
         </button>
         <h3>Books by <span class="highlight-author">@authorName</span></h3>
@@ -157,5 +157,10 @@
     {
         await CartService.AddToCartAsync(book);
         book.AlreadyInCart = true; // Instantly lock look layout locally on action click
+    }
+
+    private void NavigateToBookDetails(int bookId)
+    {
+        Navigation.NavigateTo($"book/{bookId}");
     }
 }
