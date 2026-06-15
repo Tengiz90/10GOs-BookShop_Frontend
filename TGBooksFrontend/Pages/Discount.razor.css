@@ -1,10 +1,30 @@
-﻿/* Grid Layout */
+﻿/* ==========================================================================
+   Page Workspace Enclosure
+   ========================================================================== */
+.discounts-page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Spans the entire screen frame vertically */
+    background-color: #f5f5f5;
+    box-sizing: border-box;
+}
+
+/* Base content spaces that adapt when rows don't populate */
+.main-fill-space {
+    flex: 1 0 auto;
+}
+
+/* ==========================================================================
+   Grid Layout Configuration
+   ========================================================================== */
 .book-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
     padding: 20px;
     background-color: #f5f5f5;
+    flex: 1 0 auto; /* Claims all vacant space, dropping pagination down */
+    align-content: start; /* Prevents items from stretching over open space */
 }
 
 /* Card Alignment */
@@ -49,7 +69,7 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #d32f2f; /* Accentuated Red variant for a clean sales theme */
+    background-color: #d32f2f;
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
@@ -103,7 +123,7 @@
     margin: 2px 0;
 }
 
-/* Price Section Container Styles - Forced to Black */
+/* Price Section */
 .price-container {
     margin-top: 10px;
     display: flex;
@@ -114,7 +134,7 @@
 .final-price {
     font-size: 1.15rem;
     font-weight: bold;
-    color: #000000; /* Overridden to strict deep black text */
+    color: #000000;
 }
 
 .original-price {
@@ -124,9 +144,10 @@
 
     .original-price.crossed {
         text-decoration: line-through;
-        color: #888888; /* Muted gray cross out */
+        color: #888888;
     }
 
+/* Buttons */
 .add-to-cart-btn {
     background-color: #4CAF50;
     color: white;
@@ -149,13 +170,20 @@
         cursor: not-allowed;
     }
 
+/* ==========================================================================
+   Pagination Controls (Strictly Anchored Bottom Footer)
+   ========================================================================== */
 .pagination-footer {
+    flex-shrink: 0; /* Prevents structural compression */
+    margin-top: auto; /* Pinches layout item directly to absolute bottom boundary */
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 20px;
     padding: 30px;
     background: #f5f5f5;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .page-btn {
@@ -165,22 +193,32 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
+    transition: background-color 0.2s;
 }
+
+    .page-btn:hover:not(:disabled) {
+        background-color: #f0f0f0;
+    }
 
     .page-btn:disabled {
         background-color: #e0e0e0;
         color: #999;
         cursor: not-allowed;
+        border-color: #ccc;
     }
 
+/* States */
 .loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
     padding: 50px;
     font-size: 1.2rem;
     color: #666;
 }
 
-/* Spinner Styles */
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
     width: 36px;
@@ -200,4 +238,3 @@
         transform: rotate(360deg);
     }
 }
-

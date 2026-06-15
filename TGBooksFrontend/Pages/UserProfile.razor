@@ -130,6 +130,6 @@
     private async Task HandleLogout()
     {
         await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
-        Navigation.NavigateTo("");
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 }

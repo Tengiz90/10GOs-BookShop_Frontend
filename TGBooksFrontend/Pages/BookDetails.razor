@@ -1,0 +1,238 @@
+﻿@page "/book/{Id:int}"
+@using System.Net.Http.Json
+@using TGBooksFrontend.Models
+@using TGBooksFrontend.Services
+@inject HttpClient Http
+@inject CartService CartService
+@inject NavigationManager Navigation
+
+<PageTitle>@(BookData != null ? BookData.Title : "Loading Book Details...")</PageTitle>
+
+<div class="book-details-page-container">
+    @if (IsLoading)
+    {
+        <div class="details-loading-state">
+            <div class="spinner"></div>
+            <p>Analyzing literary archives. Please wait...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="details-error-state">
+            <div class="error-icon">❌</div>
+            <h3>Oops! Something went wrong</h3>
+            <p>@ErrorMessage</p>
+            <button class="back-home-btn" @onclick="NavigateToCatalog">Return to Catalog</button>
+        </div>
+    }
+    else if (BookData != null)
+    {
+        <div class="book-details-layout">
+            <div class="book-media-column">
+                <div class="image-wrapper">
+                    <img src="@(string.IsNullOrEmpty(BookData.ImageURL) ? "images/default-book.png" : BookData.ImageURL)"
+                         alt="Cover artwork for @BookData.Title" />
+
+                    @if (BookData.OnSale && BookData.OffPercentage > 0)
+                    {
+                        <span class="sale-badge-pill">-@BookData.OffPercentage% OFF</span>
+                    }
+                </div>
+
+                <button class="return-nav-link" @onclick="NavigateToCatalog">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                    </svg>
+                    Back to Catalog
+                </button>
+            </div>
+
+            <div class="book-info-column">
+                <nav class="category-crumbs-row">
+                    @foreach (var category in BookData.Categories)
+                    {
+                        <span class="category-tag-pill">@category.Type</span>
+                    }
+                </nav>
+
+                <h1 class="book-main-title">@BookData.Title</h1>
+
+                <p class="author-display-row">
+                    By
+                    @if (BookData.Authors != null && BookData.Authors.Any())
+                    {
+                        @for (int i = 0; i < BookData.Authors.Count; i++)
+                        {
+                            var author = BookData.Authors.ElementAt(i);
+                            <a href="/author/@author.Id" class="author-detail-link">@author.Name</a>
+
+                            @if (i < BookData.Authors.Count - 1)
+                            {
+                                <span>, </span>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <span class="unknown-author-fallback">Unknown Author</span>
+                    }
+                </p>
+
+                <div class="book-engagement-metrics">
+                    <span class="metric-item">🌐 Language: @GetLanguageDisplay(BookData.Language)</span>
+                </div>
+
+                <div class="book-pricing-dashboard">
+                    @if (BookData.OnSale && BookData.OffPercentage > 0)
+                    {
+                        <span class="current-calculated-price">
+                            ₾@((BookData.OriginalPrice * (100 - BookData.OffPercentage) / 100).ToString("F2"))
+                        </span>
+                        <span class="slashed-original-price">₾@BookData.OriginalPrice.ToString("F2")</span>
+                    }
+                    else
+                    {
+                        <span class="current-calculated-price">₾@BookData.OriginalPrice.ToString("F2")</span>
+                    }
+                </div>
+
+                <div class="inventory-status-block">
+                    @if (BookData.Quantity > 0)
+                    {
+                        <span class="stock-status in-stock">🟢 In Stock (@BookData.Quantity available)</span>
+                    }
+                    else
+                    {
+                        <span class="stock-status out-of-stock">🔴 Out of Stock</span>
+                    }
+                </div>
+
+                <div class="book-synopsis-box">
+                    <h3>Description</h3>
+                    <p>
+                        @(string.IsNullOrWhiteSpace(BookData.Description)
+                            ? "No descriptive synopsis has been provided for this work yet."
+                            : BookData.Description)
+                    </p>
+                </div>
+
+                <div class="cart-action-dock">
+                    <button class="add-to-cart-action-btn @(BookData.AlreadyInCart ? "success-state-btn" : "")"
+                            disabled="@(BookData.Quantity <= 0 || IsAddingToCart || BookData.AlreadyInCart)"
+                            @onclick="HandleAddToCart">
+                        @if (IsAddingToCart)
+                        {
+                            <span>Processing Allocation...</span>
+                        }
+                        else if (BookData.AlreadyInCart)
+                        {
+                            <span>✓ Added to Cart</span>
+                        }
+                        else if (BookData.Quantity <= 0)
+                        {
+                            <span>Sold Out</span>
+                        }
+                        else
+                        {
+                            <span>🛒 Add to Shopping Cart</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private BookWithCategoriesAndDescription? BookData;
+    private bool IsLoading = true;
+    private bool IsAddingToCart = false;
+    private string ErrorMessage = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadBookDetails();
+    }
+
+    private async Task LoadBookDetails()
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<BookWithCategoriesAndDescription>>($"books/{Id}");
+
+            if (response != null && response.WasSuccessful && response.Data != null)
+            {
+                BookData = response.Data;
+            }
+            else
+            {
+                ErrorMessage = response?.Message ?? "The system failed to read incoming data payloads.";
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            ErrorMessage = "The requested textbook structural entity could not be found down pipeline.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Network or context fault encountered: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleAddToCart()
+    {
+        if (BookData == null || BookData.Quantity <= 0 || IsAddingToCart || BookData.AlreadyInCart)
+            return;
+
+        IsAddingToCart = true;
+        try
+        {
+            await CartService.AddToCartAsync(BookData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Cart transaction structural pipeline error: {ex.Message}");
+        }
+        finally
+        {
+            IsAddingToCart = false;
+        }
+    }
+
+    private string GetLanguageDisplay(int languageValue)
+    {
+        return languageValue switch
+        {
+            0 => "English",
+            1 => "Georgian",
+            2 => "Russian",
+            3 => "German",
+            4 => "French",
+            5 => "Spanish",
+            6 => "Polish",
+            _ => "Unknown"
+        };
+    }
+
+    private void NavigateToCatalog()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private class ApiResponse<T>
+    {
+        public bool WasSuccessful { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public T? Data { get; set; }
+    }
+}

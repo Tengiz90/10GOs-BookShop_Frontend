@@ -1,13 +1,9 @@
-﻿.details-form-flex-grid > form {
-    display: contents;
-}
-
-.profile-edit-layout {
-    grid-template-columns: 1fr;
+﻿.profile-edit-layout {
     max-width: 1200px;
     margin: 0 auto;
     background: none;
     padding: 0;
+    width: 100%;
 }
 
 .full-stretch-view {
@@ -77,6 +73,12 @@
         font-weight: 700;
     }
 
+.section-subtitle {
+    color: #6c757d;
+    font-size: 0.88rem;
+    margin: -10px 0 10px 0;
+}
+
 .input-field-group {
     display: flex;
     flex-direction: column;
@@ -102,6 +104,8 @@
         font-size: 0.95rem;
         color: #2d3748;
         transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        width: 100%;
+        box-sizing: border-box;
     }
 
         .input-field-group input:focus {
@@ -186,7 +190,6 @@
     transition: all 0.2s ease;
 }
 
-    /* Modifies the toast styling contextually when validation fails or server rejects requests */
     .status-toast-notification.error-toast {
         background: #fff5f5;
         color: #c53030;
@@ -201,6 +204,7 @@
     font-weight: 500;
 }
 
+/* Medium responsive break configurations */
 @media(max-width: 992px) {
     .details-form-flex-grid {
         grid-template-columns: 1fr;

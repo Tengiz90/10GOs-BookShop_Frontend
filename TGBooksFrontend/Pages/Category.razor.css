@@ -1,71 +1,82 @@
 ﻿.category-container {
+    width: 100%;
     max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    margin: 0 auto;
+    padding: 40px;
+    box-sizing: border-box;
 }
 
-h3 {
-    color: #333;
-    font-size: 1.75rem;
-    margin-bottom: 0.5rem;
+.category-header {
+    margin-bottom: 32px;
+    border-bottom: 1px solid #edf2f7;
+    padding-bottom: 20px;
 }
+
+    .category-header h3 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #1a202c;
+        letter-spacing: -0.4px;
+    }
 
 .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    width: 100%;
 }
 
-/* Updated to style the anchor wrapper element properly */
 .category-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 2rem 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 32px 24px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    text-decoration: none; /* Removes anchor underline */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
+    box-sizing: border-box;
 }
 
     .category-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-        border-color: #007bff; /* Highlight card edge on hover */
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        border-color: #198754; /* Clean hover matching your green design profile track */
     }
 
 .category-title {
     margin: 0;
-    color: #2c3e50;
-    font-size: 1.3rem;
-    font-weight: 600;
-    transition: color 0.2s;
+    color: #2d3748;
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: color 0.2s ease;
 }
 
 .category-card:hover .category-title {
-    color: #007bff; /* Highlight text title inside the card on hover */
+    color: #198754;
 }
 
-.loading-container, .no-data-container {
+.loading-container,
+.no-data-container {
     text-align: center;
-    padding: 3rem 0;
-    color: #666;
+    padding: 80px 0;
+    color: #718096;
 }
 
 .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    width: 36px;
-    height: 36px;
+    border: 4px solid rgba(0, 0, 0, 0.05);
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border-left-color: #007bff;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem auto;
+    border-left-color: #198754;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px auto;
 }
 
 @keyframes spin {
@@ -75,5 +86,17 @@ h3 {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+/* Screen constraints adaptation for smaller devices */
+@media (max-width: 768px) {
+    .category-container {
+        padding: 24px;
+    }
+
+    .category-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 }

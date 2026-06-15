@@ -2,11 +2,12 @@
 @using TGBooksFrontend.Models
 @inject HttpClient Http
 
-<PageTitle>Categories</PageTitle>
+<PageTitle>Book Categories</PageTitle>
 
 <div class="category-container">
-    <h3>Book Categories</h3>
-    <hr />
+    <header class="category-header">
+        <h3>Book Categories</h3>
+    </header>
 
     @if (categories == null)
     {
@@ -26,7 +27,6 @@
         <div class="category-grid">
             @foreach (var category in categories)
             {
-                @* Wrapped entire card structure in an anchor link *@
                 <a href="/books?categoryId=@category.Id" class="category-card" @key="category.Id">
                     <div class="category-info">
                         <h4 class="category-title">@category.Type</h4>
@@ -50,7 +50,6 @@
         try
         {
             var url = "categories/get-all";
-
             var response = await Http.GetFromJsonAsync<ApiResponse<List<TGBooksFrontend.Models.Category>>>(url);
 
             if (response != null && response.WasSuccessful && response.Data != null)

@@ -1,0 +1,307 @@
+﻿.book-details-page-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.book-details-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 48px;
+    align-items: start;
+}
+
+/* Left Column: Cover Styling */
+.book-media-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.image-wrapper {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+    .image-wrapper img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        object-fit: contain;
+        max-height: 480px;
+    }
+
+.sale-badge-pill {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: #dc2626;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.return-nav-link {
+    background: none;
+    border: none;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    align-self: flex-start;
+    transition: color 0.15s ease;
+}
+
+    .return-nav-link:hover {
+        color: #198754;
+    }
+
+/* Right Column: Information & Metadata Text Styles */
+.book-info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.category-crumbs-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.category-tag-pill {
+    background: #edf2f7;
+    color: #4a5568;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.book-main-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+/* Added styles for the author links row matching homepage */
+.author-display-row {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin: 0 0 16px 0;
+}
+
+.author-detail-link {
+    color: #2b6cb0;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+    .author-detail-link:hover {
+        text-decoration: underline;
+    }
+
+.unknown-author-fallback {
+    font-style: italic;
+    color: #a0aec0;
+}
+
+.book-engagement-metrics {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #718096;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+}
+
+.book-pricing-dashboard {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.current-calculated-price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a202c;
+}
+
+.slashed-original-price {
+    font-size: 1.25rem;
+    color: #a0aec0;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.inventory-status-block {
+    margin-bottom: 28px;
+}
+
+.stock-status {
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+    .stock-status.in-stock {
+        background: #e6fffa;
+        color: #047481;
+    }
+
+    .stock-status.out-of-stock {
+        background: #fff5f5;
+        color: #c53030;
+    }
+
+.book-synopsis-box {
+    border-top: 1px solid #edf2f7;
+    padding-top: 24px;
+    margin-bottom: 32px;
+}
+
+    .book-synopsis-box h3 {
+        font-size: 1.1rem;
+        color: #2d3748;
+        margin: 0 0 12px 0;
+        font-weight: 700;
+    }
+
+    .book-synopsis-box p {
+        font-size: 1rem;
+        color: #4a5568;
+        line-height: 1.65;
+        margin: 0;
+    }
+
+/* Add To Cart Processing Buttons */
+.cart-action-dock {
+    border-top: 1px solid #edf2f7;
+    padding-top: 24px;
+}
+
+.add-to-cart-action-btn {
+    background: #198754;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 32px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px -1px rgba(25, 135, 84, 0.2);
+}
+
+    .add-to-cart-action-btn:hover:not(:disabled) {
+        background: #157347;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(25, 135, 84, 0.25);
+    }
+
+    .add-to-cart-action-btn:disabled {
+        background: #e2e8f0;
+        color: #a0aec0;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .add-to-cart-action-btn.success-state-btn {
+        background: #2b6cb0 !important;
+        color: #ffffff !important;
+        cursor: default;
+    }
+
+/* Loading & Exception Structural Templates Styles */
+.details-loading-state, .details-error-state {
+    text-align: center;
+    padding: 80px 0;
+}
+
+.spinner {
+    border: 4px solid rgba(0,0,0,0.05);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #198754;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.details-error-state .error-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.details-error-state h3 {
+    font-size: 1.35rem;
+    color: #1a202c;
+    margin: 0 0 8px 0;
+}
+
+.details-error-state p {
+    color: #718096;
+    margin: 0 0 24px 0;
+}
+
+.back-home-btn {
+    background: #4a5568;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Responsive Grid Adaptations */
+@media(max-width: 850px) {
+    .book-details-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .book-media-column img {
+        max-height: 360px;
+    }
+
+    .add-to-cart-action-btn {
+        max-width: 100%;
+    }
+}

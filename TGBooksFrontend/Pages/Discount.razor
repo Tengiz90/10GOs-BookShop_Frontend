@@ -5,90 +5,92 @@
 
 <PageTitle>Promotions & Discounts</PageTitle>
 
-@if (books == null)
-{
-    <div class="loading-container">
-        <div class="spinner"></div>
-        <p>Loading discount deals...</p>
-    </div>
-}
-else if (!books.Any())
-{
-    <div class="loading-container">
-        <p>There are currently no active promotional book sales available.</p>
-    </div>
-}
-else
-{
-    <div class="book-grid">
-        @foreach (var book in books)
-        {
-            <div class="book-card" @key="book.Id">
-                <div class="image-container">
-                    <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
+<div class="discounts-page-container">
+    @if (books == null)
+    {
+        <div class="loading-container main-fill-space">
+            <div class="spinner"></div>
+            <p>Loading discount deals...</p>
+        </div>
+    }
+    else if (!books.Any())
+    {
+        <div class="loading-container main-fill-space">
+            <p>There are currently no active promotional book sales available.</p>
+        </div>
+    }
+    else
+    {
+        <div class="book-grid">
+            @foreach (var book in books)
+            {
+                <div class="book-card" @key="book.Id">
+                    <div class="image-container">
+                        <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
-                    @if (book.OnSale && book.OffPercentage > 0)
-                    {
-                        <div class="sale-badge">@book.OffPercentage% OFF</div>
-                    }
-                </div>
-
-                <div class="book-info">
-                    <div class="book-text-content">
-                        <h4 class="book-title">@book.Title</h4>
-
-                        <p class="author-name">
-                            @if (book.Authors != null)
-                            {
-                                @for (int i = 0; i < book.Authors.Count; i++)
-                                {
-                                    var author = book.Authors.ElementAt(i);
-                                    <a href="/author/@author.Id" class="author-link">@author.Name</a>
-
-                                    @if (i < book.Authors.Count - 1)
-                                    {
-                                        <span>, </span>
-                                    }
-                                }
-                            }
-                        </p>
-
-                        <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
-                        <p class="book-detail">Available: @book.Quantity</p>
-
-                        <div class="price-container">
-                            @if (book.OnSale && book.OffPercentage > 0)
-                            {
-                                <span class="final-price">₾@CalculateDiscountedPrice(book.OriginalPrice, book.OffPercentage).ToString("0.00")</span>
-                                <span class="original-price crossed">₾@book.OriginalPrice.ToString("0.00")</span>
-                            }
-                            else
-                            {
-                                <span class="final-price">₾@book.OriginalPrice.ToString("0.00")</span>
-                            }
-                        </div>
+                        @if (book.OnSale && book.OffPercentage > 0)
+                        {
+                            <div class="sale-badge">@book.OffPercentage% OFF</div>
+                        }
                     </div>
 
-                    @if (book.AlreadyInCart)
-                    {
-                        <button class="add-to-cart-btn secondary" disabled>In Cart</button>
-                    }
-                    else
-                    {
-                        <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
-                    }
-                </div>
-            </div>
-        }
-    </div>
+                    <div class="book-info">
+                        <div class="book-text-content">
+                            <h4 class="book-title">@book.Title</h4>
 
-    @* Reused Home Pagination Controls *@
-    <div class="pagination-footer">
-        <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
-        <span>Page @currentPage</span>
-        <button class="page-btn" disabled="@(!hasNextPage)" @onclick="NextPage">Next</button>
-    </div>
-}
+                            <p class="author-name">
+                                @if (book.Authors != null)
+                                {
+                                    @for (int i = 0; i < book.Authors.Count; i++)
+                                    {
+                                        var author = book.Authors.ElementAt(i);
+                                        <a href="/author/@author.Id" class="author-link">@author.Name</a>
+
+                                        @if (i < book.Authors.Count - 1)
+                                        {
+                                            <span>, </span>
+                                        }
+                                    }
+                                }
+                            </p>
+
+                            <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
+                            <p class="book-detail">Available: @book.Quantity</p>
+
+                            <div class="price-container">
+                                @if (book.OnSale && book.OffPercentage > 0)
+                                {
+                                    <span class="final-price">₾@CalculateDiscountedPrice(book.OriginalPrice, book.OffPercentage).ToString("0.00")</span>
+                                    <span class="original-price crossed">₾@book.OriginalPrice.ToString("0.00")</span>
+                                }
+                                else
+                                {
+                                    <span class="final-price">₾@book.OriginalPrice.ToString("0.00")</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (book.AlreadyInCart)
+                        {
+                            <button class="add-to-cart-btn secondary" disabled>In Cart</button>
+                        }
+                        else
+                        {
+                            <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Pagination Controls - Pushed down by the flex-grow container property *@
+        <div class="pagination-footer">
+            <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
+            <span>Page @currentPage</span>
+            <button class="page-btn" disabled="@(!hasNextPage)" @onclick="NextPage">Next</button>
+        </div>
+    }
+</div>
 
 @code {
     private List<Book>? books;
@@ -126,9 +128,7 @@ else
     {
         try
         {
-            // Appends onSale=true parameter directly to target your [HttpGet("page")] query options
             var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&onSale=true";
-
             var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
 
             if (response != null && response.WasSuccessful && response.Data != null)
@@ -153,7 +153,7 @@ else
     private async Task AddToCart(Book book)
     {
         await CartService.AddToCartAsync(book);
-        book.AlreadyInCart = true; // Instantly lock look layout locally on action click
+        book.AlreadyInCart = true;
     }
 
     private async Task NextPage()
@@ -161,7 +161,7 @@ else
         if (hasNextPage)
         {
             currentPage++;
-            books = null; // Instantly show spinner
+            books = null;
             await LoadData();
         }
     }
@@ -171,9 +171,8 @@ else
         if (currentPage > 1)
         {
             currentPage--;
-            books = null; // Instantly show spinner
+            books = null;
             await LoadData();
         }
     }
 }
-

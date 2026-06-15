@@ -1,6 +1,9 @@
-﻿using System.Security.Claims;
+﻿using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection; // Add this namespace for GetService
 using Microsoft.JSInterop;
 using TGBooksFrontend.Models;
 
@@ -9,19 +12,21 @@ namespace TGBooksFrontend
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly IJSRuntime _jsRuntime;
+        private readonly IServiceProvider _serviceProvider; // Inject this instead of HttpClient directly
         private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
         private UserSession? _currentUserSession;
 
-        public CustomAuthStateProvider(IJSRuntime jsRuntime)
+        // Change constructor to receive IServiceProvider
+        public CustomAuthStateProvider(IJSRuntime jsRuntime, IServiceProvider serviceProvider)
         {
             _jsRuntime = jsRuntime;
+            _serviceProvider = serviceProvider;
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             try
             {
-                // Pull stored session info directly from browser storage on load
                 var storedSessionJson = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "tgbooks_user_session");
 
                 if (string.IsNullOrEmpty(storedSessionJson))
@@ -50,9 +55,15 @@ namespace TGBooksFrontend
         {
             _currentUserSession = session;
 
-            // Serialize and commit session data string to local storage cache
             var sessionJson = JsonSerializer.Serialize(session);
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "tgbooks_user_session", sessionJson);
+
+            // Resolve HttpClient dynamically out of the active scope container
+            var http = _serviceProvider.GetRequiredService<HttpClient>();
+            if (http != null)
+            {
+                http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.JwtToken);
+            }
 
             var authState = BuildStatePrincipal(session);
             NotifyAuthenticationStateChanged(Task.FromResult(authState));
@@ -62,8 +73,14 @@ namespace TGBooksFrontend
         {
             _currentUserSession = null;
 
-            // Wipe token data entirely out of local storage
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "tgbooks_user_session");
+
+            // Resolve HttpClient dynamically to drop headers without blocking application startup
+            var http = _serviceProvider.GetRequiredService<HttpClient>();
+            if (http != null)
+            {
+                http.DefaultRequestHeaders.Authorization = null;
+            }
 
             var authState = new AuthenticationState(_anonymous);
             NotifyAuthenticationStateChanged(Task.FromResult(authState));
