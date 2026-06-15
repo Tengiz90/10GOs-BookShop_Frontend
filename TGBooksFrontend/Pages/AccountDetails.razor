@@ -26,8 +26,8 @@
 
             @if (!string.IsNullOrEmpty(statusMessage))
             {
-                <div class="status-toast-notification">
-                    ✨ @statusMessage
+                <div class="status-toast-notification @(isErrorStatus ? "error-toast" : "")">
+                    @(isErrorStatus ? "❌" : "✨") @statusMessage
                 </div>
             }
 
@@ -199,6 +199,7 @@
     private bool showBillingValidationErrors = false;
 
     private string statusMessage = "";
+    private bool isErrorStatus = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -267,6 +268,7 @@
             string.IsNullOrWhiteSpace(nameModel.LastName))
         {
             statusMessage = "First name and last name are required.";
+            isErrorStatus = true;
             return;
         }
 
@@ -298,15 +300,18 @@
 
                 showNameValidationErrors = false;
                 statusMessage = "Identity profile names have been updated successfully!";
+                isErrorStatus = false;
             }
             else
             {
                 statusMessage = apiResponse?.Message ?? "An error occurred while updating profile data.";
+                isErrorStatus = true;
             }
         }
         catch (Exception ex)
         {
             statusMessage = $"Connection failed: {ex.Message}";
+            isErrorStatus = true;
         }
         finally
         {
@@ -327,6 +332,7 @@
             string.IsNullOrWhiteSpace(billingModel.PostalCode))
         {
             statusMessage = "Please fill all required billing fields. Address Line 2 is optional.";
+            isErrorStatus = true;
             return;
         }
 
@@ -337,17 +343,13 @@
             var request = new UpdateBillingAddress
             {
                 Address1 = billingModel.Address1.Trim(),
-                Address2 = string.IsNullOrWhiteSpace(billingModel.Address2)
-                    ? ""
-                    : billingModel.Address2.Trim(),
+                Address2 = string.IsNullOrWhiteSpace(billingModel.Address2) ? "" : billingModel.Address2.Trim(),
                 City = billingModel.City.Trim(),
                 PostalCode = billingModel.PostalCode.Trim()
             };
 
             var httpResponse = await Http.PutAsJsonAsync("users/edit-billing-address", request);
-
             var rawResponse = await httpResponse.Content.ReadAsStringAsync();
-
             ApiResponse<object>? apiResponse = null;
 
             if (!string.IsNullOrWhiteSpace(rawResponse))
@@ -356,10 +358,7 @@
                 {
                     apiResponse = JsonSerializer.Deserialize<ApiResponse<object>>(
                         rawResponse,
-                        new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 }
                 catch
                 {
@@ -376,16 +375,18 @@
 
                 showBillingValidationErrors = false;
                 statusMessage = apiResponse?.Message ?? "Billing address saved successfully!";
+                isErrorStatus = false;
             }
             else
             {
-                statusMessage = apiResponse?.Message
-                    ?? $"Billing address was not saved. Server status: {(int)httpResponse.StatusCode}. {rawResponse}";
+                statusMessage = apiResponse?.Message ?? $"Billing address was not saved. Server status: {(int)httpResponse.StatusCode}. {rawResponse}";
+                isErrorStatus = true;
             }
         }
         catch (Exception ex)
         {
             statusMessage = $"Connection failed: {ex.Message}";
+            isErrorStatus = true;
         }
         finally
         {
@@ -395,30 +396,22 @@
 
     private string GetNameRequiredInputClass(string? value)
     {
-        return showNameValidationErrors && string.IsNullOrWhiteSpace(value)
-            ? "input-error"
-            : "";
+        return showNameValidationErrors && string.IsNullOrWhiteSpace(value) ? "input-error" : "";
     }
 
     private string GetNameRequiredLabelClass(string? value)
     {
-        return showNameValidationErrors && string.IsNullOrWhiteSpace(value)
-            ? "required-label"
-            : "";
+        return showNameValidationErrors && string.IsNullOrWhiteSpace(value) ? "required-label" : "";
     }
 
     private string GetBillingRequiredInputClass(string? value)
     {
-        return showBillingValidationErrors && string.IsNullOrWhiteSpace(value)
-            ? "input-error"
-            : "";
+        return showBillingValidationErrors && string.IsNullOrWhiteSpace(value) ? "input-error" : "";
     }
 
     private string GetBillingRequiredLabelClass(string? value)
     {
-        return showBillingValidationErrors && string.IsNullOrWhiteSpace(value)
-            ? "required-label"
-            : "";
+        return showBillingValidationErrors && string.IsNullOrWhiteSpace(value) ? "required-label" : "";
     }
 
     private void GoBack()

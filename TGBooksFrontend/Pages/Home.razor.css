@@ -44,7 +44,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding-top:10px;
+    padding-top: 10px;
     height: 100%;
     transition: transform 0.2s;
 }
@@ -132,6 +132,30 @@
     margin: 2px 0;
 }
 
+/* Price Section Matrix Modifications */
+.price-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.final-price {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: black;
+}
+
+.original-price {
+    font-size: 0.9rem;
+    color: #777;
+}
+
+    .original-price.crossed {
+        text-decoration: line-through;
+        color: #999;
+    }
+
 .add-to-cart-btn {
     background-color: #4CAF50;
     color: white;
@@ -191,7 +215,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border-left-color: #2e7d32; /* Match your primary theme accent green color */
+    border-left-color: #2e7d32;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem auto;
 }

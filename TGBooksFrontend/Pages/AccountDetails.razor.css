@@ -183,7 +183,15 @@
     margin-bottom: 32px;
     border: 1px solid #bbf7d0;
     font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
+
+    /* Modifies the toast styling contextually when validation fails or server rejects requests */
+    .status-toast-notification.error-toast {
+        background: #fff5f5;
+        color: #c53030;
+        border-color: #feb2b2;
+    }
 
 .loading-state-indicator {
     padding: 80px 0;

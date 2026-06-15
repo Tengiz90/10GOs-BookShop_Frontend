@@ -55,6 +55,18 @@ else
 
                         <p class="book-detail">Language: @GetLanguageDisplay(book.Language)</p>
                         <p class="book-detail">Available: @book.Quantity</p>
+
+                        <div class="price-container">
+                            @if (book.OnSale && book.OffPercentage > 0)
+                            {
+                                <span class="final-price">₾@CalculateDiscountedPrice(book.OriginalPrice, book.OffPercentage).ToString("0.00")</span>
+                                <span class="original-price crossed">₾@book.OriginalPrice.ToString("0.00")</span>
+                            }
+                            else
+                            {
+                                <span class="final-price">₾@book.OriginalPrice.ToString("0.00")</span>
+                            }
+                        </div>
                     </div>
 
                     @if (book.AlreadyInCart)
@@ -104,6 +116,12 @@ else
         };
     }
 
+    private decimal CalculateDiscountedPrice(decimal originalPrice, int offPercentage)
+    {
+        decimal discountMultiplier = 100 - offPercentage;
+        return (originalPrice * discountMultiplier) / 100;
+    }
+
     private async Task LoadData()
     {
         try
@@ -135,6 +153,7 @@ else
     private async Task AddToCart(Book book)
     {
         await CartService.AddToCartAsync(book);
+        book.AlreadyInCart = true; // Instantly lock look layout locally on action click
     }
 
     private async Task NextPage()
@@ -157,3 +176,4 @@ else
         }
     }
 }
+

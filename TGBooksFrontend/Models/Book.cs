@@ -20,6 +20,10 @@
         [JsonPropertyName("onSale")]
         public bool OnSale { get; set; }
 
+
+        [JsonPropertyName("originalPrice")]
+        public decimal OriginalPrice { get; set; }
+
         [JsonPropertyName("offPercentage")]
         public int OffPercentage { get; set; }
 

@@ -13,9 +13,9 @@
             <span class="cart-count-badge">@((cartItems?.Sum(i => i.Quantity) ?? 0)) Items</span>
         </header>
 
-        @if (!string.IsNullOrEmpty(statusMessage))
+        @if (!string.IsNullOrEmpty(statusMessage) && !statusMessage.Contains("balanced") && !statusMessage.Contains("Success"))
         {
-            <div class="cart-status-alert">
+            <div class="cart-status-alert error-state">
                 <span>@statusMessage</span>
             </div>
         }
@@ -32,10 +32,8 @@
                 <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
                 </svg>
-
                 <h3>Your cart is empty</h3>
                 <p>Explore our library collection to add books to your personal shelf.</p>
-
                 <button class="continue-shopping-btn" @onclick="BrowseCatalogue">
                     Browse Catalogue
                 </button>
@@ -47,6 +45,9 @@
                 <div class="cart-items-list">
                     @foreach (var item in cartItems)
                     {
+                        var singleItemPrice = GetEffectivePrice(item);
+                        var totalRowPrice = singleItemPrice * item.Quantity;
+
                         <div class="cart-item-card" @key="item.Id">
                             <div class="item-image-wrapper">
                                 <img src="@(string.IsNullOrEmpty(item.ImageURL) ? "images/placeholder-book.png" : item.ImageURL)" alt="@item.Title" />
@@ -54,25 +55,34 @@
 
                             <div class="item-details">
                                 <h4 class="item-title">@item.Title</h4>
-                                <span class="item-meta-tag">
-                                    Language: @GetLanguageDisplay(item.Language)
-                                </span>
+                                <div class="item-meta-container">
+                                    <span class="item-meta-tag">
+                                        @GetLanguageDisplay(item.Language)
+                                    </span>
+                                    <span class="item-price-each">
+                                        $@singleItemPrice.ToString("0.00") each
+                                    </span>
+                                </div>
                             </div>
 
-                            <div class="item-quantity-controls">
-                                <button class="qty-btn"
-                                        @onclick="() => UpdateItemQuantity(item, item.Quantity - 1)"
-                                        disabled="@(item.Quantity <= 1 || isProcessing)">
-                                    −
-                                </button>
+                            <div class="item-interactive-group">
+                                <div class="item-quantity-controls">
+                                    <button class="qty-btn"
+                                            @onclick="() => UpdateItemQuantity(item, item.Quantity - 1)"
+                                            disabled="@(item.Quantity <= 1 || isProcessing)">
+                                        −
+                                    </button>
+                                    <span class="qty-display">@item.Quantity</span>
+                                    <button class="qty-btn"
+                                            @onclick="() => UpdateItemQuantity(item, item.Quantity + 1)"
+                                            disabled="@isProcessing">
+                                        +
+                                    </button>
+                                </div>
 
-                                <span class="qty-display">@item.Quantity</span>
-
-                                <button class="qty-btn"
-                                        @onclick="() => UpdateItemQuantity(item, item.Quantity + 1)"
-                                        disabled="@isProcessing">
-                                    +
-                                </button>
+                                <div class="item-total-price-block">
+                                    <span>$@totalRowPrice.ToString("0.00")</span>
+                                </div>
                             </div>
 
                             <div class="item-actions">
@@ -105,6 +115,11 @@
                         </div>
 
                         <hr class="summary-divider" />
+
+                        <div class="summary-row total-cost-row">
+                            <span>Total Cost</span>
+                            <span>$@CalculateCartTotal().ToString("0.00")</span>
+                        </div>
 
                         <div class="shipping-notice-box">
                             <strong>Standard Distribution Delivery</strong>
@@ -140,9 +155,7 @@
         {
             isLoading = true;
             statusMessage = "";
-
             var result = await CartService.GetCartAsync();
-
             cartItems = result.Items;
             statusMessage = result.ErrorMessage ?? "";
         }
@@ -150,6 +163,22 @@
         {
             isLoading = false;
         }
+    }
+
+    private decimal GetEffectivePrice(GetCartItem item)
+    {
+        if (item.OnSale && item.OffPercentage > 0)
+        {
+            decimal discountMultiplier = 100 - item.OffPercentage;
+            return (item.OriginalPrice * discountMultiplier) / 100;
+        }
+        return item.OriginalPrice;
+    }
+
+    private decimal CalculateCartTotal()
+    {
+        if (cartItems == null) return 0;
+        return cartItems.Sum(item => GetEffectivePrice(item) * item.Quantity);
     }
 
     private async Task UpdateItemQuantity(GetCartItem item, int newQuantity)
@@ -161,14 +190,11 @@
         {
             isProcessing = true;
             statusMessage = "";
-
             var result = await CartService.UpdateItemQuantityAsync(item.Id, newQuantity);
-
             if (result.Success)
             {
                 item.Quantity = result.UpdatedItem?.Quantity ?? newQuantity;
             }
-
             statusMessage = result.Message;
         }
         finally
@@ -186,14 +212,11 @@
         {
             isProcessing = true;
             statusMessage = "";
-
             var result = await CartService.RemoveItemFromCartAsync(itemId);
-
             if (result.Success)
             {
                 cartItems?.RemoveAll(i => i.Id == itemId);
             }
-
             statusMessage = result.Message;
         }
         finally

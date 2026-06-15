@@ -1,13 +1,4 @@
-﻿The white spacing looks a bit loose because the horizontal line (`<hr />`) below your title has default browser margins, and the `.book-grid` wrapper has its own layout padding pushing things down even further.
-
-Reducing the margins around the `<hr / > ` line and tightening up the top padding on the `.book-grid` container brings the cards up exactly where they belong.
-
-Here is your updated style sheet:
-
-### `AuthorBooks.razor.css`
-
-```css
-/* Header Layout styling */
+﻿/* Header Layout styling */
 .author-books-header {
     display: flex;
     flex-direction: column;
@@ -29,8 +20,8 @@ h3 {
 hr {
     border: none;
     border-top: 1px solid #e2e8f0;
-    margin-top: 8px; /* Tightened gap above the line */
-    margin-bottom: 12px; /* Halved the bottom margin to pull books up */
+    margin-top: 8px;
+    margin-bottom: 12px;
 }
 
 /* Back History Navigation Button */
@@ -61,7 +52,7 @@ hr {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding: 0 10px 10px 10px; /* Changed top padding from 10px to 0 to pull cards higher */
+    padding: 0 10px 10px 10px;
     background-color: #f5f5f5;
     border-radius: 12px;
 }
@@ -148,13 +139,37 @@ hr {
     margin: 2px 0;
 }
 
+/* Price Section Matrix Styles - Forced to Clean Black */
+.price-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.final-price {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #000000; /* Overridden to strict deep black text */
+}
+
+.original-price {
+    font-size: 0.9rem;
+    color: #555555;
+}
+
+    .original-price.crossed {
+        text-decoration: line-through;
+        color: #888888;
+    }
+
 /* Actions Layout */
 .add-to-cart-btn {
     background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 25px;
-    padding: 20px;
+    padding: 10px;
     width: 100%;
     font-weight: bold;
     cursor: pointer;
@@ -197,5 +212,3 @@ hr {
         transform: rotate(360deg);
     }
 }
-
-```

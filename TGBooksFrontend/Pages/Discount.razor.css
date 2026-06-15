@@ -103,6 +103,30 @@
     margin: 2px 0;
 }
 
+/* Price Section Container Styles - Forced to Black */
+.price-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.final-price {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #000000; /* Overridden to strict deep black text */
+}
+
+.original-price {
+    font-size: 0.9rem;
+    color: #555555;
+}
+
+    .original-price.crossed {
+        text-decoration: line-through;
+        color: #888888; /* Muted gray cross out */
+    }
+
 .add-to-cart-btn {
     background-color: #4CAF50;
     color: white;
@@ -143,11 +167,11 @@
     font-weight: 500;
 }
 
-.page-btn:disabled {
-    background-color: #e0e0e0;
-    color: #999;
-    cursor: not-allowed;
-}
+    .page-btn:disabled {
+        background-color: #e0e0e0;
+        color: #999;
+        cursor: not-allowed;
+    }
 
 .loading-container {
     text-align: center;
@@ -176,3 +200,4 @@
         transform: rotate(360deg);
     }
 }
+
