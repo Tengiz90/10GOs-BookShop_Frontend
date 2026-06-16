@@ -81,11 +81,15 @@ else
 
                     @if (book.AlreadyInCart)
                     {
-                        <button class="add-to-cart-btn secondary" disabled>In Cart</button>
+                        <button class="add-to-cart-btn secondary" @onclick:stopPropagation="true" disabled>In Cart</button>
                     }
                     else
                     {
-                        <button class="add-to-cart-btn" @onclick="() => AddToCart(book)">Add to Cart</button>
+                        <button class="add-to-cart-btn" 
+                                @onclick="() => AddToCart(book)"
+                                @onclick:stopPropagation="true">
+                            Add to Cart
+                        </button>
                     }
                 </div>
             </div>
