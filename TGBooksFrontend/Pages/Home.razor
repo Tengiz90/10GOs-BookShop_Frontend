@@ -53,7 +53,7 @@ else
                                 @for (int i = 0; i < book.Authors.Count; i++)
                                 {
                                     var author = book.Authors.ElementAt(i);
-                                    <a href="/author/@author.Id" class="author-link">@author.Name</a>
+                                    <a href="/author/@author.Id" class="author-link" @onclick:stopPropagation="true">@author.Name</a>
 
                                     @if (i < book.Authors.Count - 1)
                                     {
