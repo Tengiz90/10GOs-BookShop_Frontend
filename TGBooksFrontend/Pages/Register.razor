@@ -10,7 +10,7 @@
     <div class="register-container">
         <header class="register-header">
             <h2>Create Account</h2>
-            <p>Join TGBooks and build your personal digital library shelf.</p>
+            <p>Join TGBooks and build your personal physical library.</p>
         </header>
 
         @if (!string.IsNullOrEmpty(globalErrorMessage))
@@ -26,7 +26,7 @@
 
                 <div class="form-group">
                     <label for="firstName">First Name</label>
-                    <InputText id="firstName" class="@($"form-control {(HasError("FirstName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.FirstName" placeholder="John" />
+                    <InputText id="firstName" class="@($"form-control {(HasError("FirstName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.FirstName" placeholder="Tengiz" />
                     @if (HasError("FirstName"))
                     {
                         <span class="field-error-msg">@GetFieldError("FirstName")</span>
@@ -35,7 +35,7 @@
 
                 <div class="form-group">
                     <label for="lastName">Last Name</label>
-                    <InputText id="lastName" class="@($"form-control {(HasError("LastName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.LastName" placeholder="Doe" />
+                    <InputText id="lastName" class="@($"form-control {(HasError("LastName") ? "invalid-field" : "")}")" @bind-Value="registrationModel.LastName" placeholder="Gachechiladze" />
                     @if (HasError("LastName"))
                     {
                         <span class="field-error-msg">@GetFieldError("LastName")</span>
