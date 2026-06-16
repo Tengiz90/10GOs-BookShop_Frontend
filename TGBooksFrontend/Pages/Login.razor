@@ -158,6 +158,10 @@
             {
                 errorMessage = await ReadBackendErrorMessage(responseMessage, "User was not found.");
             }
+            else if (responseMessage.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                errorMessage = "Email or Password typed incorrectly.";
+            }
             else
             {
                 errorMessage = "Server connection error. Please try again.";
@@ -204,17 +208,21 @@
 
         try
         {
+            var provider = (CustomAuthStateProvider)AuthStateProvider;
+            await provider.MarkUserAsAuthenticated(temporarySession);
+
             var payload = new
             {
-                Email = temporarySession.Email,
-                Code = verificationModel.Code
+                email = temporarySession.Email,
+                userId = temporarySession.Id,
+                code = verificationModel.Code
             };
 
-            var response = await Http.PostAsJsonAsync("users/verify-email", payload);
+            var response = await Http.PostAsJsonAsync("users/confirm-email", payload);
 
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<ConfirmEmailResult>>();
 
                 if (result != null && result.WasSuccessful)
                 {

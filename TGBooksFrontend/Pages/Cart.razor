@@ -14,7 +14,11 @@
             <span class="cart-count-badge">@((cartItems?.Sum(i => i.Quantity) ?? 0)) Items</span>
         </header>
 
-        @if (!string.IsNullOrEmpty(statusMessage) && !statusMessage.Contains("balanced") && !statusMessage.Contains("Success"))
+        @if (!string.IsNullOrEmpty(statusMessage) &&
+             !statusMessage.Contains("balanced") &&
+             !statusMessage.Contains("Success") &&
+             cartItems != null &&
+             cartItems.Any())
         {
             <div class="cart-status-alert error-state">
                 <span>@statusMessage</span>
