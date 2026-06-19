@@ -88,7 +88,6 @@
             }
         </div>
 
-        @* Pagination Controls - Pushed down by the flex-grow container property *@
         <div class="pagination-footer">
             <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
             <span>Page @currentPage</span>
@@ -157,8 +156,11 @@
 
     private async Task AddToCart(Book book)
     {
-        await CartService.AddToCartAsync(book);
-        book.AlreadyInCart = true;
+        var success = await CartService.AddToCartAsync(book);
+        if (success)
+        {
+            book.AlreadyInCart = true;
+        }
     }
 
     private async Task NextPage()

@@ -10,15 +10,14 @@
 <PageTitle>Manage Profile Settings</PageTitle>
 
 <div class="profile-edit-layout">
-    @if (sessionData != null)
+
+    @if (nameModel != null)
     {
         <div class="full-stretch-view">
+
             <header class="workspace-management-header">
                 <button type="button" class="back-nav-btn" @onclick="GoBack">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
-                    </svg>
-                    <span>Back to Dashboard</span>
+                    <span>← Back</span>
                 </button>
 
                 <h2>Manage Profile Settings</h2>
@@ -32,146 +31,119 @@
             }
 
             <div class="details-form-flex-grid">
+
+                <!-- PERSONAL -->
                 <div class="form-card-column">
                     <h3>Personal Identification</h3>
-                    <p class="section-subtitle">Configure your platform identity metadata parameters.</p>
 
                     <div class="input-row-split">
+
                         <div class="input-field-group">
-                            <label class="@GetNameRequiredLabelClass(nameModel.FirstName)">First Name *</label>
+                            <label>First Name *</label>
                             <input type="text"
                                    class="@GetNameRequiredInputClass(nameModel.FirstName)"
-                                   @bind-value="nameModel.FirstName"
-                                   @bind-value:event="oninput" />
-
-                            @if (showNameValidationErrors && string.IsNullOrWhiteSpace(nameModel.FirstName))
-                            {
-                                <span class="required-error-message">First name is required.</span>
-                            }
+                                   @bind="nameModel.FirstName" />
                         </div>
 
                         <div class="input-field-group">
-                            <label class="@GetNameRequiredLabelClass(nameModel.LastName)">Last Name *</label>
+                            <label>Last Name *</label>
                             <input type="text"
                                    class="@GetNameRequiredInputClass(nameModel.LastName)"
-                                   @bind-value="nameModel.LastName"
-                                   @bind-value:event="oninput" />
-
-                            @if (showNameValidationErrors && string.IsNullOrWhiteSpace(nameModel.LastName))
-                            {
-                                <span class="required-error-message">Last name is required.</span>
-                            }
+                                   @bind="nameModel.LastName" />
                         </div>
+
                     </div>
 
                     <div class="input-field-group">
-                        <label>Primary E-mail Address</label>
-                        <input type="email" value="@sessionData.Email" class="locked-country-input" readonly />
+                        <label>Email</label>
+                        <input type="email" value="@sessionEmail" readonly />
                     </div>
 
-                    <button type="button" class="save-changes-btn target-green" disabled="@isSavingName" @onclick="UpdatePersonalNames">
-                        @(isSavingName ? "Synchronizing..." : "Save Identity Info")
+                    <button class="save-changes-btn"
+                            disabled="@isSavingName"
+                            @onclick="UpdatePersonalNames">
+                        Save Identity Info
                     </button>
                 </div>
 
+                <!-- BILLING -->
                 <div class="form-card-column">
-                    <h3>Checkout Billing Configuration</h3>
-                    <p class="section-subtitle">Manage address points and localization properties.</p>
+                    <h3>Billing Address</h3>
 
                     <div class="input-field-group">
-                        <label class="@GetBillingRequiredLabelClass(billingModel.Address1)">Street Address Line 1 *</label>
-                        <input type="text"
-                               class="@GetBillingRequiredInputClass(billingModel.Address1)"
-                               @bind-value="billingModel.Address1"
-                               @bind-value:event="oninput"
-                               placeholder="123 Bookworm Lane" />
-
-                        @if (showBillingValidationErrors && string.IsNullOrWhiteSpace(billingModel.Address1))
-                        {
-                            <span class="required-error-message">Street Address Line 1 is required.</span>
-                        }
+                        <label>Address 1 *</label>
+                        <input @bind="billingModel.Address1" />
                     </div>
 
                     <div class="input-field-group">
-                        <label>Street Address Line 2</label>
-                        <input type="text" @bind-value="billingModel.Address2" @bind-value:event="oninput" placeholder="Apt, Suite, Building, etc." />
+                        <label>Address 2</label>
+                        <input @bind="billingModel.Address2" />
                     </div>
 
                     <div class="input-row-split">
-                        <div class="input-field-group">
-                            <label class="@GetBillingRequiredLabelClass(billingModel.City)">City Location *</label>
-                            <input type="text"
-                                   class="@GetBillingRequiredInputClass(billingModel.City)"
-                                   @bind-value="billingModel.City"
-                                   @bind-value:event="oninput"
-                                   placeholder="Tbilisi" />
 
-                            @if (showBillingValidationErrors && string.IsNullOrWhiteSpace(billingModel.City))
-                            {
-                                <span class="required-error-message">City is required.</span>
-                            }
+                        <div class="input-field-group">
+                            <label>City *</label>
+                            <input @bind="billingModel.City" />
                         </div>
 
                         <div class="input-field-group">
-                            <label class="@GetBillingRequiredLabelClass(billingModel.PostalCode)">Postal / Zip Code *</label>
-                            <input type="text"
-                                   class="@GetBillingRequiredInputClass(billingModel.PostalCode)"
-                                   @bind-value="billingModel.PostalCode"
-                                   @bind-value:event="oninput"
-                                   placeholder="0101" />
-
-                            @if (showBillingValidationErrors && string.IsNullOrWhiteSpace(billingModel.PostalCode))
-                            {
-                                <span class="required-error-message">Postal / Zip Code is required.</span>
-                            }
+                            <label>Postal Code *</label>
+                            <input @bind="billingModel.PostalCode" />
                         </div>
+
                     </div>
 
                     <div class="input-field-group">
-                        <label>Country Destination *</label>
-                        <input type="text" value="Georgia" class="locked-country-input" readonly />
+                        <label>Country</label>
+                        <input value="Georgia" readonly />
                     </div>
 
-                    <button type="button" class="save-changes-btn primary-purple" disabled="@isSavingBilling" @onclick="UpdateBillingAddress">
-                        @(isSavingBilling ? "Saving details..." : "Save Billing Address")
+                    <button class="save-changes-btn"
+                            disabled="@isSavingBilling"
+                            @onclick="UpdateBillingAddress">
+                        Save Billing Address
                     </button>
                 </div>
+
             </div>
         </div>
     }
     else
     {
-        <div class="loading-state-indicator">
-            <p>Verifying secure user session parameters. Please wait...</p>
-        </div>
+        <p>Loading session...</p>
     }
+
 </div>
 
 @code {
-    private UserSession? sessionData;
+    private string? sessionEmail;
+
     private EditUserName nameModel = new();
     private UpdateBillingAddress billingModel = new();
 
-    private bool isSavingName = false;
-    private bool isSavingBilling = false;
-    private bool showNameValidationErrors = false;
-    private bool showBillingValidationErrors = false;
+    private bool isSavingName;
+    private bool isSavingBilling;
 
     private string statusMessage = "";
-    private bool isErrorStatus = false;
+    private bool isErrorStatus;
 
     protected override async Task OnInitializedAsync()
     {
-        sessionData = ((CustomAuthStateProvider)AuthStateProvider).GetCurrentUserSession();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-        if (sessionData == null)
+        if (user.Identity == null || !user.Identity.IsAuthenticated)
         {
             Navigation.NavigateTo("login");
             return;
         }
 
-        nameModel.FirstName = sessionData.FirstName ?? "";
-        nameModel.LastName = sessionData.LastName ?? "";
+        sessionEmail = user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+        var splitName = user.Identity.Name?.Split(' ');
+        nameModel.FirstName = splitName?.FirstOrDefault() ?? "";
+        nameModel.LastName = splitName?.Length > 1 ? splitName[1] : "";
 
         await LoadBillingInfo();
     }
@@ -181,128 +153,106 @@
         try
         {
             var response = await Http.GetFromJsonAsync<ApiResponse<GetUserBillingInfoResult>>("users/billing-info");
-            if (response != null && response.WasSuccessful && response.Data != null)
+
+            if (response?.WasSuccessful == true && response.Data != null)
             {
                 nameModel.FirstName = response.Data.FirstName ?? "";
                 nameModel.LastName = response.Data.LastName ?? "";
+
                 billingModel.Address1 = response.Data.Address1 ?? "";
                 billingModel.Address2 = response.Data.Address2 ?? "";
                 billingModel.City = response.Data.City ?? "";
                 billingModel.PostalCode = response.Data.PostalCode ?? "";
-
-                if (sessionData != null && (sessionData.FirstName != response.Data.FirstName || sessionData.LastName != response.Data.LastName))
-                {
-                    sessionData.FirstName = response.Data.FirstName;
-                    sessionData.LastName = response.Data.LastName;
-                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(sessionData);
-                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Initialization Data Fault: {ex.Message}");
+            Console.WriteLine(ex.Message);
         }
     }
 
     private async Task UpdatePersonalNames()
     {
         if (isSavingName) return;
-        showNameValidationErrors = true;
-        statusMessage = "";
-
-        if (string.IsNullOrWhiteSpace(nameModel.FirstName) || string.IsNullOrWhiteSpace(nameModel.LastName))
-        {
-            statusMessage = "First name and last name are required.";
-            isErrorStatus = true;
-            return;
-        }
 
         isSavingName = true;
+        statusMessage = "";
+
         try
         {
-            var request = new EditUserName { FirstName = nameModel.FirstName.Trim(), LastName = nameModel.LastName.Trim() };
-            var httpResponse = await Http.PutAsJsonAsync("users/edit-name", request);
-            var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<EditUserNameResult>>();
-
-            if (httpResponse.IsSuccessStatusCode && apiResponse != null && apiResponse.WasSuccessful)
+            var request = new EditUserName
             {
-                sessionData!.FirstName = request.FirstName;
-                sessionData.LastName = request.LastName;
-                await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(sessionData);
-                showNameValidationErrors = false;
-                statusMessage = "Identity profile names have been updated successfully!";
+                FirstName = nameModel.FirstName,
+                LastName = nameModel.LastName
+            };
+
+            var response = await Http.PutAsJsonAsync("users/edit-name", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                statusMessage = "Profile updated";
                 isErrorStatus = false;
             }
             else
             {
-                statusMessage = apiResponse?.Message ?? "An error occurred while updating profile data.";
+                statusMessage = "Update failed";
                 isErrorStatus = true;
             }
         }
         catch (Exception ex)
         {
-            statusMessage = $"Connection failed: {ex.Message}";
+            statusMessage = ex.Message;
             isErrorStatus = true;
         }
-        finally { isSavingName = false; }
+        finally
+        {
+            isSavingName = false;
+        }
     }
 
     private async Task UpdateBillingAddress()
     {
         if (isSavingBilling) return;
-        showBillingValidationErrors = true;
-        statusMessage = "";
-
-        if (string.IsNullOrWhiteSpace(billingModel.Address1) || string.IsNullOrWhiteSpace(billingModel.City) || string.IsNullOrWhiteSpace(billingModel.PostalCode))
-        {
-            statusMessage = "Please fill all required billing fields.";
-            isErrorStatus = true;
-            return;
-        }
 
         isSavingBilling = true;
+
         try
         {
             var request = new UpdateBillingAddress
             {
-                Address1 = billingModel.Address1.Trim(),
-                Address2 = string.IsNullOrWhiteSpace(billingModel.Address2) ? "" : billingModel.Address2.Trim(),
-                City = billingModel.City.Trim(),
-                PostalCode = billingModel.PostalCode.Trim()
+                Address1 = billingModel.Address1,
+                Address2 = billingModel.Address2,
+                City = billingModel.City,
+                PostalCode = billingModel.PostalCode
             };
 
-            var httpResponse = await Http.PutAsJsonAsync("users/edit-billing-address", request);
-            var rawResponse = await httpResponse.Content.ReadAsStringAsync();
-            ApiResponse<object>? apiResponse = null;
+            var response = await Http.PutAsJsonAsync("users/edit-billing-address", request);
 
-            if (!string.IsNullOrWhiteSpace(rawResponse))
+            if (response.IsSuccessStatusCode)
             {
-                apiResponse = JsonSerializer.Deserialize<ApiResponse<object>>(rawResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            }
-
-            if (httpResponse.IsSuccessStatusCode)
-            {
-                showBillingValidationErrors = false;
-                statusMessage = apiResponse?.Message ?? "Billing address saved successfully!";
+                statusMessage = "Billing updated";
                 isErrorStatus = false;
             }
             else
             {
-                statusMessage = apiResponse?.Message ?? $"Server rejected request: {(int)httpResponse.StatusCode}";
+                statusMessage = "Billing update failed";
                 isErrorStatus = true;
             }
         }
         catch (Exception ex)
         {
-            statusMessage = $"Connection failed: {ex.Message}";
+            statusMessage = ex.Message;
             isErrorStatus = true;
         }
-        finally { isSavingBilling = false; }
+        finally
+        {
+            isSavingBilling = false;
+        }
     }
 
-    private string GetNameRequiredInputClass(string? value) => showNameValidationErrors && string.IsNullOrWhiteSpace(value) ? "input-error" : "";
-    private string GetNameRequiredLabelClass(string? value) => showNameValidationErrors && string.IsNullOrWhiteSpace(value) ? "required-label" : "";
-    private string GetBillingRequiredInputClass(string? value) => showBillingValidationErrors && string.IsNullOrWhiteSpace(value) ? "input-error" : "";
-    private string GetBillingRequiredLabelClass(string? value) => showBillingValidationErrors && string.IsNullOrWhiteSpace(value) ? "required-label" : "";
-    private void GoBack() => Navigation.NavigateTo("user-profile");
+    private string GetNameRequiredInputClass(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "input-error" : "";
+
+    private void GoBack()
+        => Navigation.NavigateTo("user-profile");
 }

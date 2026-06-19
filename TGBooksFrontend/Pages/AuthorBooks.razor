@@ -10,7 +10,7 @@
 
 <div class="author-page-container">
     <div class="author-books-header">
-        <button class="back-btn" @onclick="GoBack" @onclick="() => NavigateToBookDetails(book.Id)">
+        <button class="back-btn" @onclick="GoBack">
             <span class="arrow">←</span> Go Back
         </button>
         <h3>Books by <span class="highlight-author">@authorName</span></h3>
@@ -35,7 +35,7 @@
         <div class="book-grid">
             @foreach (var book in books)
             {
-                <div class="book-card" @key="book.Id"  @onclick="() => NavigateToBookDetails(book.Id)">
+                <div class="book-card" @key="book.Id" @onclick="() => NavigateToBookDetails(book.Id)">
                     <div class="image-container">
                         <img src="@book.ImageURL" class="book-image" alt="@book.Title" />
 
@@ -74,7 +74,7 @@
                         else
                         {
                             <button class="add-to-cart-btn"
-                                    @onclick="() => AddToCart(book)"
+                                    @onclick="async () => await AddToCart(book)"
                                     @onclick:stopPropagation="true">
                                 Add to Cart
                             </button>
@@ -138,7 +138,6 @@
 
     private async Task GoBack()
     {
-        // Safely uses the window history to trace back to home, sales, or categories correctly
         await JS.InvokeVoidAsync("history.back");
     }
 
@@ -159,8 +158,11 @@
 
     private async Task AddToCart(Book book)
     {
-        await CartService.AddToCartAsync(book);
-        book.AlreadyInCart = true; // Instantly lock look layout locally on action click
+        var success = await CartService.AddToCartAsync(book);
+        if (success)
+        {
+            book.AlreadyInCart = true;
+        }
     }
 
     private void NavigateToBookDetails(int bookId)

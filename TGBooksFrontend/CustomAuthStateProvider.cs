@@ -1,9 +1,6 @@
-﻿using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.DependencyInjection; // Add this namespace for GetService
 using Microsoft.JSInterop;
 using TGBooksFrontend.Models;
 
@@ -12,91 +9,108 @@ namespace TGBooksFrontend
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly IJSRuntime _jsRuntime;
-        private readonly IServiceProvider _serviceProvider; // Inject this instead of HttpClient directly
-        private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-        private UserSession? _currentUserSession;
+        private readonly ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+        private AuthenticationState? _cachedState;
 
-        // Change constructor to receive IServiceProvider
-        public CustomAuthStateProvider(IJSRuntime jsRuntime, IServiceProvider serviceProvider)
+        public CustomAuthStateProvider(IJSRuntime jsRuntime)
         {
             _jsRuntime = jsRuntime;
-            _serviceProvider = serviceProvider;
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
+            if (_cachedState != null)
+            {
+                return _cachedState;
+            }
+
             try
             {
-                var storedSessionJson = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "tgbooks_user_session");
+                var json = await _jsRuntime.InvokeAsync<string?>(
+                    "localStorage.getItem",
+                    "tgbooks_user_session");
 
-                if (string.IsNullOrEmpty(storedSessionJson))
+                if (string.IsNullOrEmpty(json))
                 {
-                    return new AuthenticationState(_anonymous);
+                    _cachedState = new AuthenticationState(_anonymous);
+                    return _cachedState;
                 }
 
-                var session = JsonSerializer.Deserialize<UserSession>(storedSessionJson);
-                if (session == null || string.IsNullOrEmpty(session.JwtToken))
+                var session = JsonSerializer.Deserialize<UserSession>(json);
+
+                if (session?.JwtToken == null)
                 {
-                    return new AuthenticationState(_anonymous);
+                    _cachedState = new AuthenticationState(_anonymous);
+                    return _cachedState;
                 }
 
-                _currentUserSession = session;
-                return BuildStatePrincipal(session);
+                var identity = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, session.Id.ToString()),
+                    new Claim(ClaimTypes.Name, $"{session.FirstName} {session.LastName}".Trim()),
+                    new Claim(ClaimTypes.Email, session.Email ?? ""),
+                    new Claim(ClaimTypes.Role, session.Role ?? ""),
+                    new Claim("JwtToken", session.JwtToken) // Store token in claims
+                }, "JwtAuth");
+
+                _cachedState = new AuthenticationState(new ClaimsPrincipal(identity));
+                return _cachedState;
             }
             catch
             {
-                return new AuthenticationState(_anonymous);
+                _cachedState = new AuthenticationState(_anonymous);
+                return _cachedState;
             }
         }
 
-        public UserSession? GetCurrentUserSession() => _currentUserSession;
+        public UserSession? GetCurrentUserSession()
+        {
+            if (_cachedState == null || !_cachedState.User.Identity?.IsAuthenticated == true)
+            {
+                return null;
+            }
+
+            var user = _cachedState.User;
+            var nameClaim = user.FindFirst(ClaimTypes.Name)?.Value ?? "";
+            var nameParts = nameClaim.Split(' ', 2);
+
+            return new UserSession
+            {
+                Id = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0,
+                FirstName = nameParts.Length > 0 ? nameParts[0] : "",
+                LastName = nameParts.Length > 1 ? nameParts[1] : "",
+                Email = user.FindFirst(ClaimTypes.Email)?.Value,
+                Role = user.FindFirst(ClaimTypes.Role)?.Value,
+                JwtToken = user.FindFirst("JwtToken")?.Value // Safely populates token now!
+            };
+        }
 
         public async Task MarkUserAsAuthenticated(UserSession session)
         {
-            _currentUserSession = session;
+            var json = JsonSerializer.Serialize(session);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "tgbooks_user_session", json);
 
-            var sessionJson = JsonSerializer.Serialize(session);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "tgbooks_user_session", sessionJson);
-
-            // Resolve HttpClient dynamically out of the active scope container
-            var http = _serviceProvider.GetRequiredService<HttpClient>();
-            if (http != null)
+            var identity = new ClaimsIdentity(new[]
             {
-                http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.JwtToken);
-            }
+                new Claim(ClaimTypes.NameIdentifier, session.Id.ToString()),
+                new Claim(ClaimTypes.Name, $"{session.FirstName} {session.LastName}".Trim()),
+                new Claim(ClaimTypes.Email, session.Email ?? ""),
+                new Claim(ClaimTypes.Role, session.Role ?? ""),
+                new Claim("JwtToken", session.JwtToken ?? "")
+            }, "JwtAuth");
 
-            var authState = BuildStatePrincipal(session);
-            NotifyAuthenticationStateChanged(Task.FromResult(authState));
+            var user = new ClaimsPrincipal(identity);
+            _cachedState = new AuthenticationState(user);
+
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
         }
 
         public async Task MarkUserAsLoggedOut()
         {
-            _currentUserSession = null;
-
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "tgbooks_user_session");
+            _cachedState = new AuthenticationState(_anonymous);
 
-            // Resolve HttpClient dynamically to drop headers without blocking application startup
-            var http = _serviceProvider.GetRequiredService<HttpClient>();
-            if (http != null)
-            {
-                http.DefaultRequestHeaders.Authorization = null;
-            }
-
-            var authState = new AuthenticationState(_anonymous);
-            NotifyAuthenticationStateChanged(Task.FromResult(authState));
-        }
-
-        private AuthenticationState BuildStatePrincipal(UserSession session)
-        {
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, session.Id.ToString()),
-                new Claim(ClaimTypes.Name, session.FullName),
-                new Claim(ClaimTypes.Email, session.Email),
-                new Claim(ClaimTypes.Role, session.Role)
-            }, "JwtAuth");
-
-            return new AuthenticationState(new ClaimsPrincipal(identity));
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
         }
     }
 }

@@ -1,39 +1,36 @@
-﻿using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.JSInterop;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using TGBooksFrontend.Models;
 
-namespace TGBooksFrontend
+public class BlazorAuthorizationHandler : DelegatingHandler
 {
-    public class BlazorAuthorizationHandler : DelegatingHandler
+    private readonly IJSRuntime _js;
+
+    public BlazorAuthorizationHandler(IJSRuntime js)
     {
-        private readonly AuthenticationStateProvider _authStateProvider;
+        _js = js;
+    }
 
-        public BlazorAuthorizationHandler(AuthenticationStateProvider authStateProvider)
-        {
-            _authStateProvider = authStateProvider;
-        }
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var json = await _js.InvokeAsync<string?>(
+            "localStorage.getItem",
+            "tgbooks_user_session");
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        if (!string.IsNullOrEmpty(json))
         {
-            // 1. Cast and look for an active in-memory user session
-            if (_authStateProvider is CustomAuthStateProvider customProvider)
+            var session = JsonSerializer.Deserialize<UserSession>(json);
+
+            if (session?.JwtToken != null)
             {
-                var session = customProvider.GetCurrentUserSession();
-
-                // 2. Fall back to reading local storage via GetAuthenticationStateAsync if memory is uninitialized
-                if (session == null)
-                {
-                    await customProvider.GetAuthenticationStateAsync();
-                    session = customProvider.GetCurrentUserSession();
-                }
-
-                // 3. If a token exists, attach it seamlessly to the authorization headers
-                if (session != null && !string.IsNullOrEmpty(session.JwtToken))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", session.JwtToken);
-                }
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", session.JwtToken);
             }
-
-            return await base.SendAsync(request, cancellationToken);
         }
+
+        return await base.SendAsync(request, cancellationToken);
     }
 }

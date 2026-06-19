@@ -1,4 +1,5 @@
-﻿@page "/book/{Id:int}"
+﻿
+@page "/book/{Id:int}"
 @using System.Net.Http.Json
 @using TGBooksFrontend.Models
 @using TGBooksFrontend.Services
@@ -198,11 +199,16 @@
         IsAddingToCart = true;
         try
         {
-            await CartService.AddToCartAsync(BookData);
+            // Assuming BookWithCategoriesAndDescription inherits safely from Book
+            var success = await CartService.AddToCartAsync(BookData);
+            if (success)
+            {
+                BookData.AlreadyInCart = true;
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Cart transaction structural pipeline error: {ex.Message}");
+            Console.WriteLine($"Cart transaction error: {ex.Message}");
         }
         finally
         {
@@ -228,12 +234,5 @@
     private async Task NavigateBack()
     {
         await JS.InvokeVoidAsync("history.back");
-    }
-
-    private class ApiResponse<T>
-    {
-        public bool WasSuccessful { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public T? Data { get; set; }
     }
 }

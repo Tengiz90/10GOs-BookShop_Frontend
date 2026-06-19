@@ -1,4 +1,5 @@
-﻿@page "/"
+﻿
+@page "/"
 @using TGBooksFrontend.Models
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
@@ -85,7 +86,7 @@ else
                     }
                     else
                     {
-                        <button class="add-to-cart-btn" 
+                        <button class="add-to-cart-btn"
                                 @onclick="() => AddToCart(book)"
                                 @onclick:stopPropagation="true">
                             Add to Cart
@@ -96,7 +97,6 @@ else
         }
     </div>
 
-    @* Pagination controls using dynamic stream calculations *@
     <div class="pagination-footer">
         <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
         <span>Page @currentPage</span>
@@ -132,6 +132,7 @@ else
             _ => "Unknown"
         };
     }
+
     private decimal CalculateDiscountedPrice(decimal originalPrice, int offPercentage)
     {
         decimal discountMultiplier = 100 - offPercentage;
@@ -142,18 +143,14 @@ else
     {
         try
         {
-            // 1. Matches your API query string parameter '[FromQuery] string? title'
             var encodedSearch = Uri.EscapeDataString(searchQuery);
             var url = $"books/page?pageNumber={currentPage}&pageSize={pageSize}&title={encodedSearch}";
 
-            // 2. Deserializes directly into your exact backend ApiResponse template structure
             var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
 
             if (response != null && response.WasSuccessful && response.Data != null)
             {
                 books = response.Data;
-
-                // 3. Dynamic evaluation: If we pull a full index, keep the navigation active
                 hasNextPage = books.Count == pageSize;
             }
             else
@@ -173,9 +170,8 @@ else
     private void OnSearchInput(ChangeEventArgs e)
     {
         searchQuery = e.Value?.ToString() ?? "";
-        currentPage = 1; // Always return to page 1 on filter changes
+        currentPage = 1;
 
-        // 1. Safely teardown old timer and unhook old references to prevent event multi-firing loops
         if (debounceTimer != null)
         {
             debounceTimer.Stop();
@@ -183,28 +179,29 @@ else
             debounceTimer.Dispose();
         }
 
-        // 2. Configure a completely fresh isolated timer instance
-        debounceTimer = new System.Timers.Timer(350); // 350ms is the sweet spot for typing pacing
+        debounceTimer = new System.Timers.Timer(350);
         debounceTimer.Elapsed += OnTimerElapsed;
-        debounceTimer.AutoReset = false; // Run once per key pause group
+        debounceTimer.AutoReset = false;
         debounceTimer.Start();
     }
 
     private async void OnTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
     {
-        // 3. Force background execution back safely onto the main UI thread loop
         await InvokeAsync(async () =>
         {
-            books = null; // Triggers loading spinner animation instantly while resolving array
+            books = null;
             await LoadData();
-            StateHasChanged(); // CRITICAL: Forces UI repaint for backspaces/additions
+            StateHasChanged();
         });
     }
 
     private async Task AddToCart(Book book)
     {
-        await CartService.AddToCartAsync(book);
-        book.AlreadyInCart = true; // Instantly lock look layout locally on action click
+        var success = await CartService.AddToCartAsync(book);
+        if (success)
+        {
+            book.AlreadyInCart = true;
+        }
     }
 
     private async Task NextPage()
@@ -232,3 +229,4 @@ else
         Navigation.NavigateTo($"book/{bookId}");
     }
 }
+

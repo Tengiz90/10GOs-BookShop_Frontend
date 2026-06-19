@@ -14,11 +14,7 @@
             <span class="cart-count-badge">@((cartItems?.Sum(i => i.Quantity) ?? 0)) Items</span>
         </header>
 
-        @if (!string.IsNullOrEmpty(statusMessage) &&
-             !statusMessage.Contains("balanced") &&
-             !statusMessage.Contains("Success") &&
-             cartItems != null &&
-             cartItems.Any())
+        @if (!string.IsNullOrEmpty(statusMessage) && isErrorState)
         {
             <div class="cart-status-alert error-state">
                 <span>@statusMessage</span>
@@ -99,7 +95,7 @@
                                         type="button">
                                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
-                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3h11V2h-11v1z" />
+                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1z" />
                                     </svg>
                                 </button>
                             </div>
@@ -151,6 +147,7 @@
     private bool isLoading = true;
     private bool isProcessing = false;
     private string statusMessage = "";
+    private bool isErrorState = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -163,13 +160,37 @@
         {
             isLoading = true;
             statusMessage = "";
+            isErrorState = false;
+
+            // GetCartAsync returns a Value Tuple: (List<GetCartItem> Items, string? ErrorMessage)
             var result = await CartService.GetCartAsync();
+
+            // 1. If an explicit server error message is populated, display it as an actual error
+            if (!string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                statusMessage = result.ErrorMessage;
+                isErrorState = true;
+                cartItems = new List<GetCartItem>();
+                return;
+            }
+
+            // 2. If Items is null (uninitialized or new user), gracefully fall back to an empty shelf
+            // without throwing a 'NullReferenceException' or triggering an error banner
+            if (result.Items == null)
+            {
+                cartItems = new List<GetCartItem>();
+                return;
+            }
+
+            // 3. Otherwise, map the items cleanly to the UI state
             cartItems = result.Items;
-            statusMessage = result.ErrorMessage ?? "";
         }
         catch (Exception)
         {
-            statusMessage = "An unexpected local error occurred while retrieving your cart.";
+            // Actual server/network exceptions throw a visible UI failure state
+            statusMessage = "An unexpected error occurred while retrieving your cart.";
+            isErrorState = true;
+            cartItems = new List<GetCartItem>();
         }
         finally
         {
@@ -202,16 +223,24 @@
         {
             isProcessing = true;
             statusMessage = "";
+            isErrorState = false;
+
             var result = await CartService.UpdateItemQuantityAsync(item.Id, newQuantity);
+
             if (result.Success)
             {
                 item.Quantity = result.UpdatedItem?.Quantity ?? newQuantity;
             }
-            statusMessage = result.Message;
+            else
+            {
+                statusMessage = !string.IsNullOrEmpty(result.Message) ? result.Message : "Requested quantity exceeds available stock limits.";
+                isErrorState = true;
+            }
         }
         catch
         {
-            statusMessage = "Failed to update quantity. Please refresh and retry.";
+            statusMessage = "Failed to update quantity due to network connection issues.";
+            isErrorState = true;
         }
         finally
         {
@@ -228,16 +257,23 @@
         {
             isProcessing = true;
             statusMessage = "";
+            isErrorState = false;
+
             var result = await CartService.RemoveItemFromCartAsync(itemId);
             if (result.Success)
             {
                 cartItems?.RemoveAll(i => i.Id == itemId);
             }
-            statusMessage = result.Message;
+            else
+            {
+                statusMessage = result.Message;
+                isErrorState = true;
+            }
         }
         catch
         {
             statusMessage = "Failed to remove item. Please try again.";
+            isErrorState = true;
         }
         finally
         {

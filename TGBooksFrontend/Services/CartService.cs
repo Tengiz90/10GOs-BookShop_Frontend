@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using TGBooksFrontend.Models;
 
@@ -10,35 +9,23 @@ namespace TGBooksFrontend.Services
     public class CartService
     {
         private readonly HttpClient _http;
-        private readonly AuthenticationStateProvider _authStateProvider;
         private readonly NavigationManager _navigation;
         private readonly IJSRuntime _js;
 
         public CartService(
             HttpClient http,
-            AuthenticationStateProvider authStateProvider,
             NavigationManager navigation,
             IJSRuntime js)
         {
             _http = http;
-            _authStateProvider = authStateProvider;
             _navigation = navigation;
             _js = js;
         }
 
-        public async Task AddToCartAsync(Book book)
+        public async Task<bool> AddToCartAsync(Book book)
         {
             try
             {
-                var authState = await _authStateProvider.GetAuthenticationStateAsync();
-                var user = authState.User;
-
-                if (user.Identity == null || !user.Identity.IsAuthenticated)
-                {
-                    _navigation.NavigateTo("login");
-                    return;
-                }
-
                 var cartRequest = new AddCartItem
                 {
                     BookId = book.Id,
@@ -51,26 +38,29 @@ namespace TGBooksFrontend.Services
                     httpResponse.StatusCode == HttpStatusCode.Forbidden)
                 {
                     _navigation.NavigateTo("login");
-                    return;
+                    return false;
                 }
 
-                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<GetCartItem?>>();
+                var apiResponse = await httpResponse.Content
+                    .ReadFromJsonAsync<ApiResponse<GetCartItem?>>();
 
-                if (httpResponse.IsSuccessStatusCode && apiResponse != null && apiResponse.WasSuccessful)
+                if (httpResponse.IsSuccessStatusCode &&
+                    apiResponse?.WasSuccessful == true)
                 {
-                    book.AlreadyInCart = true;
-                    Console.WriteLine($"Added {book.Title} to cart successfully.");
+                    return true;
                 }
-                else
-                {
-                    string errorMsg = apiResponse?.Message ?? "An error occurred while adding the item.";
-                    await _js.InvokeVoidAsync("alert", errorMsg);
-                }
+
+                await _js.InvokeVoidAsync(
+                    "alert",
+                    apiResponse?.Message ?? "Failed to add item to cart."
+                );
+                return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error adding to cart processing: {ex.Message}");
-                await _js.InvokeVoidAsync("alert", "A critical error occurred.");
+                Console.WriteLine($"AddToCart error: {ex.Message}");
+                await _js.InvokeVoidAsync("alert", "Unexpected error occurred.");
+                return false;
             }
         }
 
@@ -90,20 +80,18 @@ namespace TGBooksFrontend.Services
                 var response = await httpResponse.Content
                     .ReadFromJsonAsync<ApiResponse<ICollection<GetCartItem>>>();
 
-                if (httpResponse.IsSuccessStatusCode && response != null && response.WasSuccessful)
+                if (httpResponse.IsSuccessStatusCode &&
+                    response?.WasSuccessful == true)
                 {
                     return (response.Data?.ToList() ?? new List<GetCartItem>(), null);
                 }
 
-                return (
-                    new List<GetCartItem>(),
-                    response?.Message ?? "Failed to securely load cart allocations."
-                );
+                return (new List<GetCartItem>(), response?.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Cart Fetch Crash: {ex.Message}");
-                return (new List<GetCartItem>(), "Unable to connect to system service records.");
+                Console.WriteLine($"Cart fetch error: {ex.Message}");
+                return (new List<GetCartItem>(), "Connection error.");
             }
         }
 
@@ -112,9 +100,7 @@ namespace TGBooksFrontend.Services
             int newQuantity)
         {
             if (newQuantity < 1)
-            {
                 return (null, "Quantity cannot be less than 1.", false);
-            }
 
             try
             {
@@ -133,40 +119,22 @@ namespace TGBooksFrontend.Services
                     return (null, "", false);
                 }
 
-                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<GetCartItem>>();
+                var apiResponse = await httpResponse.Content
+                    .ReadFromJsonAsync<ApiResponse<GetCartItem>>();
 
-                if (httpResponse.IsSuccessStatusCode && apiResponse != null && apiResponse.WasSuccessful)
+                if (httpResponse.IsSuccessStatusCode &&
+                    apiResponse?.WasSuccessful == true)
                 {
-                    return (
-                        apiResponse.Data,
-                        "Cart distribution amounts balanced.",
-                        true
-                    );
+                    // Changed message to empty string on success to stop banner text contamination
+                    return (apiResponse.Data, "", true);
                 }
 
-                if (httpResponse.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    return (
-                        null,
-                        apiResponse?.Message ?? "Stock capacity limit exceeded.",
-                        false
-                    );
-                }
-
-                return (
-                    null,
-                    apiResponse?.Message ?? "Server returned an error updated stock records.",
-                    false
-                );
+                return (null, apiResponse?.Message ?? "Server error", false);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Quantity Mod Fault: {ex.Message}");
-                return (
-                    null,
-                    "Failed to synchronize adjustments with server counters.",
-                    false
-                );
+                Console.WriteLine($"Update error: {ex.Message}");
+                return (null, "Unexpected error", false);
             }
         }
 
@@ -182,7 +150,7 @@ namespace TGBooksFrontend.Services
                 var request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Delete,
-                    RequestUri = new Uri(_http.BaseAddress!, "users/cart"),
+                    RequestUri = new Uri(_http.BaseAddress + (_http.BaseAddress?.ToString().EndsWith("/") == true ? "" : "/") + "users/cart"),
                     Content = JsonContent.Create(payload)
                 };
 
@@ -195,35 +163,27 @@ namespace TGBooksFrontend.Services
                     return (false, "");
                 }
 
-                var apiResponse = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<int?>>();
+                var apiResponse = await httpResponse.Content
+                    .ReadFromJsonAsync<ApiResponse<int?>>();
 
-                if (httpResponse.IsSuccessStatusCode && apiResponse != null && apiResponse.WasSuccessful)
+                if (httpResponse.IsSuccessStatusCode &&
+                    apiResponse?.WasSuccessful == true)
                 {
-                    return (true, "Item removed successfully from your tracking allocation.");
+                    return (true, "");
                 }
 
-                return (
-                    false,
-                    apiResponse?.Message ?? "Could not purge item from allocation list."
-                );
+                return (false, apiResponse?.Message ?? "Failed to remove item");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Item Deletion Error: {ex.Message}");
-                return (false, "Failed to complete item purge operation.");
+                Console.WriteLine($"Remove error: {ex.Message}");
+                return (false, "Unexpected error");
             }
         }
 
         public void ProceedToCheckout()
         {
-            
-        }
-
-        private class ApiResponse<T>
-        {
-            public bool WasSuccessful { get; set; }
-            public string Message { get; set; } = string.Empty;
-            public T? Data { get; set; }
+            _navigation.NavigateTo("checkout");
         }
     }
 }

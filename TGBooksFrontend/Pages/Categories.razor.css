@@ -37,7 +37,7 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    text-decoration: none;
+    text-decoration: none !important; /* Forces removal of the default link underline */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
@@ -47,7 +47,7 @@
     .category-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-        border-color: #198754; /* Clean hover matching your green design profile track */
+        border-color: #198754;
     }
 
 .category-title {
@@ -62,8 +62,7 @@
     color: #198754;
 }
 
-.loading-container,
-.no-data-container {
+.loading-container, .no-data-container {
     text-align: center;
     padding: 80px 0;
     color: #718096;
@@ -89,7 +88,6 @@
     }
 }
 
-/* Screen constraints adaptation for smaller devices */
 @media (max-width: 768px) {
     .category-container {
         padding: 24px;

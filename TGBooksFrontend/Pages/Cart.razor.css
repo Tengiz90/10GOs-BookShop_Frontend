@@ -1,12 +1,11 @@
-﻿
-/* ==========================================================================
+﻿/* ==========================================================================
    Shopping Cart Layout Wrapper
    ========================================================================== */
 .cart-page-wrapper {
     width: 100%;
     min-height: 100vh;
     background-color: #f8f9fa;
-    padding: 2rem 1.5rem; /* Increased side margins for clear breathing room */
+    padding: 2rem 1.5rem;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
@@ -100,7 +99,6 @@
     width: 100%;
 }
 
-/* Transition row architecture at 1100px to safeguard against horizontal collision */
 @media (min-width: 1100px) {
     .cart-item-card {
         flex-direction: row;
@@ -115,7 +113,7 @@
     align-items: flex-start;
     gap: 1.25rem;
     width: 100%;
-    min-width: 0; /* Isolates nested containers from flex layout expansion limits */
+    min-width: 0;
 }
 
 @media (min-width: 1100px) {
@@ -144,7 +142,7 @@
 /* Center Details Block */
 .item-details {
     flex: 1;
-    min-width: 0; /* Forces text items to adhere directly to parent layout container boundaries */
+    min-width: 0;
 }
 
 .item-title {
@@ -249,7 +247,7 @@
     color: #212529;
     text-align: right;
     white-space: nowrap;
-    padding-right: 2.5rem; /* Secures structural spacing away from screen margins on mobile devices */
+    padding-right: 2.5rem;
 }
 
 @media (min-width: 1100px) {

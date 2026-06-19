@@ -1,4 +1,5 @@
-﻿@page "/login"
+﻿
+@page "/login"
 @using TGBooksFrontend.Enums
 @using TGBooksFrontend.Models
 @inject HttpClient Http
@@ -132,6 +133,11 @@
                     {
                         verificationErrorMessage = null;
                         verificationModel.Code = string.Empty;
+
+                        // FIX: Authenticate right here so the app receives the token
+                        // and applies it to headers before executing subsequent requests
+                        await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(temporarySession);
+
                         showVerificationOverlay = true;
                         return;
                     }
@@ -208,9 +214,6 @@
 
         try
         {
-            var provider = (CustomAuthStateProvider)AuthStateProvider;
-            await provider.MarkUserAsAuthenticated(temporarySession);
-
             var payload = new
             {
                 email = temporarySession.Email,
@@ -234,7 +237,6 @@
                         return;
                     }
 
-                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(temporarySession);
                     await JS.InvokeVoidAsync("alert", "Email verified successfully! Welcome to TGBooks.");
                     Navigation.NavigateTo("user-profile");
                     return;
@@ -274,10 +276,13 @@
         Navigation.NavigateTo("/", forceLoad: true);
     }
 
-    private void CancelVerification()
+    private async Task CancelVerification()
     {
         showVerificationOverlay = false;
         temporarySession = null;
+
+        // Wipe local storage token if cancellation occurs
+        await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
     }
 
     private async Task LogoutUser()
@@ -319,3 +324,4 @@
         }
     }
 }
+

@@ -105,7 +105,6 @@
             }
         </div>
 
-        @* Reused Pagination Footer Controls *@
         <div class="pagination-footer">
             <button class="page-btn" disabled="@(currentPage == 1)" @onclick="PreviousPage">Previous</button>
             <span>Page @currentPage</span>
@@ -121,18 +120,14 @@
     private bool hasNextPage = false;
     private string? _categoryName;
 
-    // Captures ?categoryId=X from the routing path automatically
     [Parameter]
     [SupplyParameterFromQuery]
     public int CategoryId { get; set; }
 
-    // Listens for external routing value mutations
     protected override async Task OnParametersSetAsync()
     {
-        // Reset page number back to 1 if the user switches categories directly
         currentPage = 1;
-        _categoryName = null; // Clear old name layout on transitions
-        // Load data and fetch the verified category name simultaneously
+        _categoryName = null;
         await Task.WhenAll(LoadData(), FetchCategoryName());
     }
 
@@ -142,7 +137,6 @@
 
         try
         {
-            // Calls your newly added backend controller endpoint securely
             var url = $"categories/get-name/{CategoryId}";
             var response = await Http.GetFromJsonAsync<ApiResponse<string>>(url);
 
@@ -154,7 +148,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error fetching category name: {ex.Message}");
-            _categoryName = "Category"; // Fallback text safely
+            _categoryName = "Category";
         }
     }
 
@@ -168,9 +162,7 @@
     {
         try
         {
-            // Matches backend route signature: [HttpGet("page")]
             var url = $"books/page?categoryId={CategoryId}&pageNumber={currentPage}&pageSize={pageSize}";
-
             var response = await Http.GetFromJsonAsync<ApiResponse<List<Book>>>(url);
 
             if (response != null && response.WasSuccessful && response.Data != null)
@@ -182,7 +174,6 @@
             {
                 books = new List<Book>();
                 hasNextPage = false;
-                Console.WriteLine($"API Warning: {response?.Message ?? "Unknown error"}");
             }
         }
         catch (Exception ex)
@@ -215,8 +206,11 @@
 
     private async Task AddToCart(Book book)
     {
-        await CartService.AddToCartAsync(book);
-        book.AlreadyInCart = true; // Instantly lock look layout locally on action click
+        var success = await CartService.AddToCartAsync(book);
+        if (success)
+        {
+            book.AlreadyInCart = true;
+        }
     }
 
     private async Task NextPage()
@@ -224,7 +218,7 @@
         if (hasNextPage)
         {
             currentPage++;
-            books = null; // Instantly show spinner
+            books = null;
             await LoadData();
         }
     }
@@ -234,7 +228,7 @@
         if (currentPage > 1)
         {
             currentPage--;
-            books = null; // Instantly show spinner
+            books = null;
             await LoadData();
         }
     }

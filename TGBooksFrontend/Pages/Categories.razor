@@ -25,11 +25,11 @@
     else
     {
         <div class="category-grid">
-            @foreach (var category in categories)
+            @foreach (var cat in categories)
             {
-                <a href="/books?categoryId=@category.Id" class="category-card" @key="category.Id">
+                <a href="/books?categoryId=@cat.Id" class="category-card" @key="cat.Id">
                     <div class="category-info">
-                        <h4 class="category-title">@category.Type</h4>
+                        <h4 class="category-title">@cat.Type</h4>
                     </div>
                 </a>
             }
@@ -49,6 +49,8 @@
     {
         try
         {
+            // Note: If your HttpClient BaseAddress configuration doesn't automatically
+            // append "api/", update this path string to "api/categories/get-all"
             var url = "categories/get-all";
             var response = await Http.GetFromJsonAsync<ApiResponse<List<TGBooksFrontend.Models.Category>>>(url);
 
