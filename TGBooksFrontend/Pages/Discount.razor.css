@@ -217,6 +217,8 @@
     text-align: center;
     padding: 50px;
     font-size: 1.2rem;
+    min-height: 50vh; 
+    margin-top: 40px; 
     color: #666;
 }
 
