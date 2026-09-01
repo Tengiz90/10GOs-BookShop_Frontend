@@ -9,4 +9,4 @@ The website supports both Desktop and Mobile orinetaions.
 <img width="1920" height="1080" alt="Categories page" src="https://github.com/user-attachments/assets/3277c10d-d069-47f9-95db-50327adae421" />
 <img width="1920" height="1080" alt="Sales page" src="https://github.com/user-attachments/assets/83038e2a-77ba-4a90-9ead-69cd5fe33ba3" />
 <img width="1920" height="1080" alt="Sign in page" src="https://github.com/user-attachments/assets/9690ecae-0854-474e-9c86-d552699580d5" />
-<img width="616" height="1071" alt="Mobile size" src="https://github.com/user-attachments/assets/99961ec2-0fac-47e4-aeae-5cbb5fdb30dd" />
+<img height="871" alt="Mobile size" src="https://github.com/user-attachments/assets/99961ec2-0fac-47e4-aeae-5cbb5fdb30dd" />
